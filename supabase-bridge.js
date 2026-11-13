@@ -31,6 +31,7 @@
   document.getElementById('pUrl')?.insertAdjacentHTML('afterend', '<input class="field upload-field" id="pImageFile" type="file" accept="image/*" aria-label="بارکردنی وێنەی پلاتفۆرم">');
   const status = document.getElementById('sharedStatus');
   const loginFields = document.getElementById('loginFields');
+  const loginButton = document.getElementById('ownerLogin');
   const protectedBoxes = [...admin.querySelectorAll('.adminbox')].filter(box => box !== loginBox);
   let db = null;
   let ownerSignedIn = false;
@@ -75,6 +76,7 @@
   }
   async function publish() {
     if (!ownerSignedIn) throw new Error('owner sign in required');
+    if (!contentLoaded) throw new Error('Supabase content has not loaded; refusing to overwrite shared content.');
     await uploadImages(data.graphics, 'graphics');
     await uploadImages(data.sites, 'websites');
     await uploadImages(data.platforms, 'platforms');
@@ -97,7 +99,8 @@
     if (!ownerSignedIn) return toast('سەرەتا بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.');
     publish().catch(error => {
       console.error(error);
-      toast(error.message?.includes('وێنەکە گەورەیە') ? error.message : 'پاشەکەوت نەکرا؛ Supabase و ڕێکخستنی SQL بپشکنە.');
+      const detail = String(error?.message || error?.details || error?.hint || 'هەڵەی نەناسراو').replace(/\s+/g, ' ').slice(0, 150);
+      toast(`پاشەکەوت نەکرا: ${detail}`);
     });
   };
   adminRows = function (kind, id) {
@@ -164,9 +167,11 @@
   }
   db = window.supabase.createClient(window.LOVA_SUPABASE_URL, window.LOVA_SUPABASE_KEY);
   setAccess();
-  status.textContent = 'پشکنینی داتای Supabase...';
+  loginButton.disabled = true;
+  status.textContent = 'داتاکان لە Supabase بار دەکرێن...';
 
-  document.getElementById('ownerLogin').addEventListener('click', async () => {
+  loginButton.addEventListener('click', async () => {
+    if (!contentLoaded) return toast('تکایە چاوەڕێ بکە داتاکان بار ببن.');
     const email = document.getElementById('ownerEmail').value.trim();
     const password = document.getElementById('ownerPassword').value;
     if (!email || !password) return toast('ئیمەیڵ و وشەی نهێنی بنووسە.');
@@ -184,6 +189,7 @@
   (async () => {
     try {
       await loadContent();
+      loginButton.disabled = false;
       const { data: { session } } = await db.auth.getSession();
       ownerSignedIn = !!session;
       setAccess();
@@ -199,6 +205,7 @@
       });
     } catch (error) {
       console.error(error);
+      loginButton.disabled = true;
       status.textContent = 'Supabase پەیوەست بوو، بەڵام داتابەیس/SQL ئامادە نییە یان URL و key هەڵەن.';
       setAccess();
     }
