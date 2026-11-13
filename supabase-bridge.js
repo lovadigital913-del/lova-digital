@@ -1,6 +1,20 @@
 (() => {
   const admin = document.querySelector('#admin .adminwrap');
   if (!admin) return;
+  // Hidden owner shortcut: tap the brand logo five times within 2 seconds.
+  let logoTaps = 0;
+  let logoTapTimer;
+  document.querySelector('.brand')?.addEventListener('click', event => {
+    logoTaps += 1;
+    clearTimeout(logoTapTimer);
+    logoTapTimer = setTimeout(() => { logoTaps = 0; }, 2000);
+    if (logoTaps >= 5) {
+      event.preventDefault();
+      event.stopPropagation();
+      logoTaps = 0;
+      document.querySelector('[data-page="admin"]')?.click();
+    }
+  }, true);
   const configured = window.LOVA_SUPABASE_URL && window.LOVA_SUPABASE_KEY &&
     !String(window.LOVA_SUPABASE_URL).includes('YOUR_') &&
     !String(window.LOVA_SUPABASE_KEY).includes('YOUR_');
