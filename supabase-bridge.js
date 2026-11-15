@@ -1,6 +1,7 @@
 (() => {
   const admin = document.querySelector('#admin .adminwrap');
   if (!admin) return;
+  const fixedWhatsAppUrl = 'https://wa.me/message/DJ3HTYS4GPDIC1';
   // Hidden owner shortcut: tap the brand logo five times within 2 seconds.
   let logoTaps = 0;
   let logoTapTimer;
@@ -28,6 +29,13 @@
     '<button class="btn solid" id="ownerLogin">چوونەژوورەوە</button></div>' +
     '<button class="btn" id="ownerLogout" style="display:none">چوونەدەرەوە</button>';
   admin.querySelector('.pagehead').after(loginBox);
+  const homeBox = document.createElement('div');
+  homeBox.className = 'adminbox';
+  homeBox.innerHTML = '<h2>✦ دەستکاریکردنی پەڕەی سەرەکی</h2><p class="hint">سەردێڕ، وەسف، دوگمە و وێنەی گەورەی سەرەتا بگۆڕە؛ پاشان پاشەکەوتی بکە بۆ ئەوەی لە ماڵپەڕی خەڵکیش نوێ ببێتەوە.</p><div class="formgrid"><input class="field" id="homeEyebrow" placeholder="دەقی بچوکی سەرەوە"><input class="field" id="homeTitleFirst" placeholder="ڕیزی یەکەمی سەردێڕ"><input class="field" id="homeTitleAccent" placeholder="ڕیزی دووەمی سەردێڕ"><input class="field" id="homeBadgeOne" placeholder="بەشی بچوکی سەر وێنە"><input class="field" id="homeBadgeTwo" placeholder="بەشی بچوکی خوار وێنە"><input class="field" id="homeButtonWork" placeholder="دەقی دوگمەی کارەکان"><input class="field" id="homeButtonContact" placeholder="دەقی دوگمەی پەیوەندی"><input class="field" id="homeImageUrl" placeholder="لینکی وێنەی سەرەکی (ئارەزوومەندانە)"><textarea class="field" id="homeDescription" placeholder="وەسفی پەڕەی سەرەکی"></textarea><input class="field upload-field" id="homeImageFile" type="file" accept="image/*" aria-label="هەڵبژاردنی وێنەی سەرەکی"><button class="btn solid" id="saveHome">پاشەکەوتکردنی پەڕەی سەرەکی</button></div>';
+  loginBox.after(homeBox);
+  admin.querySelector('.pagehead .sub').textContent = 'لە بەڕێوەبردنەوە ناوەڕۆکی پەڕەی سەرەکی، نموونەکان و پلاتفۆرمەکان بگۆڕە؛ پاشەکەوتەکان لە Supabase هەڵدەگیرێن و لە ماڵپەڕی گشتی نوێ دەبنەوە.';
+  const oldLocalHint = [...admin.querySelectorAll('.hint')].find(element => element.textContent.includes('پاراستنی خۆجێییە'));
+  if (oldLocalHint) oldLocalHint.textContent = 'ناوەڕۆکەکان لە Supabase پاشەکەوت دەکرێن و لە هەموو ئامێرێکەوە بەڕێوە دەبرێن.';
   document.getElementById('pUrl')?.insertAdjacentHTML('afterend', '<input class="field upload-field" id="pImageFile" type="file" accept="image/*" aria-label="بارکردنی وێنەی پلاتفۆرم">');
   const status = document.getElementById('sharedStatus');
   const loginFields = document.getElementById('loginFields');
@@ -57,9 +65,18 @@
     data.graphics = Array.isArray(value.graphics) ? value.graphics : [];
     data.sites = Array.isArray(value.sites) ? value.sites : [];
     data.platforms = Array.isArray(value.platforms) ? value.platforms : [];
+    data.home = { ...homeDefaults, ...(value.home || {}) };
+    const whatsApp = data.platforms.find(item => /whatsapp|واتسئاپ|واتساپ/i.test(item.name || '') || /wa\.me/i.test(item.url || ''));
+    if (whatsApp) { whatsApp.name = 'WhatsApp'; whatsApp.url = fixedWhatsAppUrl; }
+    else data.platforms.unshift({ name: 'WhatsApp', url: fixedWhatsAppUrl });
     refreshLists(value.categories);
     contentLoaded = true;
+    fillHomeForm();
     render();
+  }
+  function fillHomeForm() {
+    const h = data.home || homeDefaults;
+    [['homeEyebrow','eyebrow'],['homeTitleFirst','titleFirst'],['homeTitleAccent','titleAccent'],['homeDescription','description'],['homeImageUrl','image'],['homeBadgeOne','badgeOne'],['homeBadgeTwo','badgeTwo'],['homeButtonWork','buttonWork'],['homeButtonContact','buttonContact']].forEach(([id,key]) => { const input = document.getElementById(id); if (input) input.value = h[key] || ''; });
   }
   async function uploadImages(items, group) {
     for (const item of items) {
@@ -80,10 +97,12 @@
     await uploadImages(data.graphics, 'graphics');
     await uploadImages(data.sites, 'websites');
     await uploadImages(data.platforms, 'platforms');
+    if (data.home?.image?.startsWith('data:image/')) await uploadImages([data.home], 'home');
     const content = {
       graphics: data.graphics,
       sites: data.sites,
       platforms: data.platforms,
+      home: data.home,
       categories: ownerCategories
     };
     const { data: updated, error } = await db.from('lova_site_content')
@@ -133,7 +152,8 @@
     const name = document.getElementById('pName').value.trim();
     let url = document.getElementById('pUrl').value.trim();
     if (!name || !url) return toast('ناو و لینکی پلاتفۆرم بنووسە.');
-    if (!/^(https?:|mailto:|tel:)/i.test(url)) url = 'https://' + url;
+    if (/whatsapp|واتسئاپ|واتساپ/i.test(name) && /^\+?[\d\s()-]{7,}$/.test(url)) url = 'https://wa.me/' + url.replace(/\D/g, '');
+    else if (!/^(https?:|mailto:|tel:)/i.test(url)) url = 'https://' + url;
     const file = document.getElementById('pImageFile').files?.[0];
     const add = image => {
       data.platforms.unshift({ name, url, image });
@@ -145,6 +165,24 @@
     if (!file.type.startsWith('image/')) return toast('تەنها فایلێکی وێنە هەڵبژێرە.');
     if (file.size > 5 * 1024 * 1024) return toast('وێنەکە گەورەیە؛ وێنەی بچووکتر هەڵبژێرە.');
     const reader = new FileReader(); reader.onload = () => add(String(reader.result)); reader.onerror = () => toast('خوێندنەوەی وێنەکە سەرکەوتوو نەبوو.'); reader.readAsDataURL(file);
+  };
+  document.getElementById('saveHome').onclick = () => {
+    const h = data.home || (data.home = { ...homeDefaults });
+    h.eyebrow = document.getElementById('homeEyebrow').value.trim();
+    h.titleFirst = document.getElementById('homeTitleFirst').value.trim();
+    h.titleAccent = document.getElementById('homeTitleAccent').value.trim();
+    h.description = document.getElementById('homeDescription').value.trim();
+    h.badgeOne = document.getElementById('homeBadgeOne').value.trim();
+    h.badgeTwo = document.getElementById('homeBadgeTwo').value.trim();
+    h.buttonWork = document.getElementById('homeButtonWork').value.trim();
+    h.buttonContact = document.getElementById('homeButtonContact').value.trim();
+    h.image = document.getElementById('homeImageUrl').value.trim() || h.image || 'logo.png';
+    const file = document.getElementById('homeImageFile').files?.[0];
+    const finish = () => publish().then(() => { document.getElementById('homeImageFile').value = ''; fillHomeForm(); }).catch(error => toast(`پاشەکەوت نەکرا: ${String(error?.message || 'هەڵەی نەناسراو').slice(0,120)}`));
+    if (!file) return finish();
+    if (!file.type.startsWith('image/')) return toast('تەنها فایلێکی وێنە هەڵبژێرە.');
+    if (file.size > 5 * 1024 * 1024) return toast('وێنەکە گەورەیە؛ وێنەی بچووکتر هەڵبژێرە.');
+    const reader = new FileReader(); reader.onload = () => { h.image = String(reader.result); finish(); }; reader.onerror = () => toast('خوێندنەوەی وێنەکە سەرکەوتوو نەبوو.'); reader.readAsDataURL(file);
   };
   const originalRender = render;
   render = function () {
