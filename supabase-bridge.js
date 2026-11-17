@@ -121,6 +121,8 @@
     const whatsApp = data.platforms.find(item => /whatsapp|واتسئاپ|واتساپ/i.test(item.name || '') || /wa\.me/i.test(item.url || ''));
     if (whatsApp) { whatsApp.name = 'WhatsApp'; whatsApp.url = fixedWhatsAppUrl; }
     else data.platforms.unshift({ name: 'WhatsApp', url: fixedWhatsAppUrl });
+    const telegram = data.platforms.find(item => /telegram|تیلیگرام/i.test(item.name || '') || /t\.me/i.test(item.url || ''));
+    if (!telegram) data.platforms.push({ name: 'Telegram', url: 'https://t.me/share/url' });
     refreshLists(value.categories);
     contentLoaded = true;
     fillHomeForm();
@@ -193,12 +195,20 @@
   adminRows = function (kind, id) {
     const isSampleList = kind === 'graphics' || kind === 'sites';
     document.getElementById(id).innerHTML = data[kind].map((item, i) =>
-      `<div class="adminrow ${isSampleList ? 'has-share' : ''}"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span>${isSampleList ? `<div class="adminrow-share"><label class="hint" for="share-copy-${kind}-${i}">دەقی شیرکردن (دەتوانیت دەستکاری بکەیت)</label><textarea class="field" id="share-copy-${kind}-${i}" data-share-copy="${kind}" data-index="${i}" rows="2">${safe(item.shareText || [item.title, item.desc].filter(Boolean).join('\n'))}</textarea><div class="adminrow-share-actions"><select class="field" data-share-platform="${kind}" data-index="${i}" aria-label="پلاتفۆرم بۆ کردنەوە لە کاتی نەبوونی هاوبەشکردنی وێنە">${(data.platforms || []).map((platform, platformIndex) => `<option value="${platformIndex}">${safe(platform.name)}</option>`).join('') || '<option value="">پلاتفۆرمێک زیاد بکە</option>'}</select><button class="btn" type="button" data-share-save="${kind}" data-index="${i}">پاشەکەوتی دەق</button><button class="btn solid" type="button" data-share-sample="${kind}" data-index="${i}" ${data.platforms?.length ? '' : 'disabled'}>شیرکردنی وێنە و دەق</button></div></div>` : ''}</div>`
+        (() => {
+          const link = isSampleList ? sampleShareLink(kind, item) : '';
+          const defaultText = [item.title, item.desc, link].filter(Boolean).join('\n');
+          return `<div class="adminrow ${isSampleList ? 'has-share' : ''}"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span>${isSampleList ? `<div class="adminrow-share"><label class="hint" for="share-copy-${kind}-${i}">دەقی شیرکردن (دەتوانیت دەستکاری بکەیت)</label><textarea class="field" id="share-copy-${kind}-${i}" data-share-copy="${kind}" data-index="${i}" rows="3">${safe(item.shareText || defaultText)}</textarea><div class="adminrow-share-actions"><select class="field" data-share-platform="${kind}" data-index="${i}" aria-label="پلاتفۆرم بۆ کردنەوە لە کاتی نەبوونی هاوبەشکردنی وێنە">${(data.platforms || []).map((platform, platformIndex) => `<option value="${platformIndex}">${safe(platform.name)}</option>`).join('') || '<option value="">پلاتفۆرمێک زیاد بکە</option>'}</select><button class="btn" type="button" data-share-save="${kind}" data-index="${i}">پاشەکەوتی دەق</button><button class="btn solid" type="button" data-share-sample="${kind}" data-index="${i}" ${data.platforms?.length ? '' : 'disabled'}>شیرکردنی وێنە و دەق</button></div></div>` : ''}</div>`;
+        })()
     ).join('') || '<span class="hint">هیچ دانەیەک نییە.</span>';
   };
   const shareStyle = document.createElement('style');
   shareStyle.textContent = '.adminrow.has-share{flex-wrap:wrap}.adminrow-share{flex:0 0 100%;display:grid;gap:8px;width:100%;padding-top:10px;border-top:1px solid #ffffff12}.adminrow-share .field{min-width:0}.adminrow-share-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.adminrow-share-actions select{width:auto;min-width:150px}.adminrow-share-actions button{padding:9px 14px}.graphics-admin-link{display:inline-flex;margin-top:16px}@media(max-width:600px){.adminrow-share-actions{align-items:stretch;flex-direction:column}.adminrow-share-actions select,.adminrow-share-actions button{width:100%}}';
   document.head.append(shareStyle);
+  function sampleShareLink(kind, item) {
+    const base = 'https://lovadigital913-del.github.io/lova-digital/';
+    return `${base}#sample=${encodeURIComponent(item.title || 'sample')}&kind=${kind}`;
+  }
   function platformShareUrl(platform, text, imageUrl) {
     const name = String(platform?.name || '').toLowerCase();
     const encodedText = encodeURIComponent(text);
@@ -231,7 +241,11 @@
     const item = data[kind]?.[index];
     const textField = admin.querySelector(`[data-share-copy="${kind}"][data-index="${index}"]`);
     if (!item || !textField) return;
-    const text = textField.value.trim();
+    let text = textField.value.trim();
+    if (kind === 'graphics' || kind === 'sites') {
+      const deepLink = sampleShareLink(kind, item);
+      if (!text.includes(deepLink)) text = `${text}${text ? '\n' : ''}${deepLink}`;
+    }
     item.shareText = text;
     if (saveButton) {
       if (await save(kind)) toast('دەقی شیرکردن پاشەکەوت کرا.');
