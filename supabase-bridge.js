@@ -179,18 +179,112 @@
 
   // All add/edit/delete controls use this shared save path, including contact platforms.
   save = function () {
-    if (!ownerSignedIn) return toast('سەرەتا بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.');
-    publish().catch(error => {
+    if (!ownerSignedIn) {
+      toast('سەرەتا بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.');
+      return Promise.resolve(false);
+    }
+    return publish().then(() => true).catch(error => {
       console.error(error);
       const detail = String(error?.message || error?.details || error?.hint || 'هەڵەی نەناسراو').replace(/\s+/g, ' ').slice(0, 150);
       toast(`پاشەکەوت نەکرا: ${detail}`);
+      return false;
     });
   };
   adminRows = function (kind, id) {
+    const isSampleList = kind === 'graphics' || kind === 'sites';
     document.getElementById(id).innerHTML = data[kind].map((item, i) =>
-      `<div class="adminrow"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span></div>`
+      `<div class="adminrow ${isSampleList ? 'has-share' : ''}"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span>${isSampleList ? `<div class="adminrow-share"><label class="hint" for="share-copy-${kind}-${i}">دەقی شیرکردن (دەتوانیت دەستکاری بکەیت)</label><textarea class="field" id="share-copy-${kind}-${i}" data-share-copy="${kind}" data-index="${i}" rows="2">${safe(item.shareText || [item.title, item.desc].filter(Boolean).join('\n'))}</textarea><div class="adminrow-share-actions"><select class="field" data-share-platform="${kind}" data-index="${i}" aria-label="پلاتفۆرم بۆ کردنەوە لە کاتی نەبوونی هاوبەشکردنی وێنە">${(data.platforms || []).map((platform, platformIndex) => `<option value="${platformIndex}">${safe(platform.name)}</option>`).join('') || '<option value="">پلاتفۆرمێک زیاد بکە</option>'}</select><button class="btn" type="button" data-share-save="${kind}" data-index="${i}">پاشەکەوتی دەق</button><button class="btn solid" type="button" data-share-sample="${kind}" data-index="${i}" ${data.platforms?.length ? '' : 'disabled'}>شیرکردنی وێنە و دەق</button></div></div>` : ''}</div>`
     ).join('') || '<span class="hint">هیچ دانەیەک نییە.</span>';
   };
+  const shareStyle = document.createElement('style');
+  shareStyle.textContent = '.adminrow.has-share{flex-wrap:wrap}.adminrow-share{flex:0 0 100%;display:grid;gap:8px;width:100%;padding-top:10px;border-top:1px solid #ffffff12}.adminrow-share .field{min-width:0}.adminrow-share-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.adminrow-share-actions select{width:auto;min-width:150px}.adminrow-share-actions button{padding:9px 14px}.graphics-admin-link{display:inline-flex;margin-top:16px}@media(max-width:600px){.adminrow-share-actions{align-items:stretch;flex-direction:column}.adminrow-share-actions select,.adminrow-share-actions button{width:100%}}';
+  document.head.append(shareStyle);
+  function platformShareUrl(platform, text, imageUrl) {
+    const name = String(platform?.name || '').toLowerCase();
+    const encodedText = encodeURIComponent(text);
+    const publicImage = /^https?:\/\//i.test(imageUrl) ? imageUrl : location.href;
+    if (/whatsapp|واتسئاپ|واتساپ/.test(name)) {
+      const base = safePlatformHref(platform.url || fixedWhatsAppUrl) || fixedWhatsAppUrl;
+      const url = new URL(base);
+      url.searchParams.set('text', text);
+      return url.href;
+    }
+    if (/telegram/.test(name)) return `https://t.me/share/url?url=${encodeURIComponent(publicImage)}&text=${encodedText}`;
+    if (/facebook/.test(name)) return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicImage)}&quote=${encodedText}`;
+    if (/twitter|(^|\s)x($|\s)/i.test(name)) return `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodeURIComponent(publicImage)}`;
+    if (/linkedin/.test(name)) return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicImage)}`;
+    return safePlatformHref(platform.url || '');
+  }
+  admin.addEventListener('input', event => {
+    const field = event.target.closest('[data-share-copy]');
+    if (!field) return;
+    const item = data[field.dataset.shareCopy]?.[Number(field.dataset.index)];
+    if (item) item.shareText = field.value;
+  });
+  admin.addEventListener('click', async event => {
+    const saveButton = event.target.closest('[data-share-save]');
+    const shareButton = event.target.closest('[data-share-sample]');
+    const button = saveButton || shareButton;
+    if (!button || !ownerSignedIn) return;
+    const kind = button.dataset.shareSave || button.dataset.shareSample;
+    const index = Number(button.dataset.index);
+    const item = data[kind]?.[index];
+    const textField = admin.querySelector(`[data-share-copy="${kind}"][data-index="${index}"]`);
+    if (!item || !textField) return;
+    const text = textField.value.trim();
+    item.shareText = text;
+    if (saveButton) {
+      if (await save(kind)) toast('دەقی شیرکردن پاشەکەوت کرا.');
+      return;
+    }
+    const platformSelect = admin.querySelector(`[data-share-platform="${kind}"][data-index="${index}"]`);
+    const platform = data.platforms?.[Number(platformSelect?.value)];
+    if (!platform) return toast('سەرەتا پلاتفۆرمێک زیاد بکە.');
+    const imageUrl = item.image || (kind === 'graphics' ? sampleGraphic(index % 6) : finalSitePreview(item));
+    const destination = platformShareUrl(platform, text, imageUrl);
+    if (!destination) return toast('لینکی ئەم پلاتفۆرمە دروست نییە.');
+    if (!(await save(kind))) return;
+    let blob = null;
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error(`Image request failed: ${response.status}`);
+      blob = await response.blob();
+    } catch (error) {
+      console.warn('Could not load sample image for sharing.', error);
+    }
+    if (blob && navigator.share && navigator.canShare) {
+      const file = new File([blob], `${item.title || 'sample'}.${(blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')}`, { type: blob.type || 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: item.title || '', text });
+          return;
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+          console.warn('Native sharing was unavailable; using the download fallback.', error);
+        }
+      }
+    }
+    if (blob) {
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${item.title || 'sample'}.${(blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')}`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    } else {
+      window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    }
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    } catch (error) {
+      console.warn('Could not copy sample share text.', error);
+    }
+    window.open(destination, '_blank', 'noopener,noreferrer');
+    if (blob) toast(copied ? 'وێنەکە دابەزێنرا و دەقەکە کۆپی کرا؛ لە پلاتفۆرمەکە هاوپێچی بکە.' : 'وێنەکە دابەزێنرا؛ دەقەکە لە خانەکەوە کۆپی بکە و هاوپێچی بکە.');
+    else toast(copied ? 'وێنەکە لە پەڕەیەکی نوێ کراوەتەوە و دەقەکە کۆپی کرا؛ وێنەکە لەوێ دابەزێنە.' : 'وێنەکە لە پەڕەیەکی نوێ کراوەتەوە؛ دەقەکە لە خانەکەوە کۆپی بکە.');
+  });
   function activeCustomPage() { return data.customPages.find(page => page.id === document.getElementById('manageCustomPage').value); }
   function renderCustomPageManager() {
     const pages = data.customPages || [], pageSelect = document.getElementById('manageCustomPage');
