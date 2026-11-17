@@ -87,16 +87,12 @@
   const status = document.getElementById('sharedStatus');
   const loginFields = document.getElementById('loginFields');
   const loginButton = document.getElementById('ownerLogin');
-  const protectedBoxes = [...admin.children].filter(box => box !== loginBox);
+  const protectedBoxes = [...admin.querySelectorAll('.adminbox')].filter(box => box !== loginBox);
   let db = null;
-  const ownerEmailAllowed = 'lovadigital913@gmail.com';
   let ownerSignedIn = false;
   let contentLoaded = false;
-  let contentLoadPromise = null;
-  let localRecoveryPending = false;
 
   function setAccess() {
-    admin.closest('#admin')?.classList.toggle('owner-authenticated', ownerSignedIn);
     protectedBoxes.forEach(box => box.style.display = ownerSignedIn ? '' : 'none');
     loginFields.style.display = ownerSignedIn ? 'none' : 'grid';
     document.getElementById('ownerLogout').style.display = ownerSignedIn ? '' : 'none';
@@ -116,48 +112,20 @@
     const { data: row, error } = await db.from('lova_site_content').select('content').eq('id', 'main').single();
     if (error) throw error;
     const value = row.content || {};
-    const cachedArray = key => { try { const parsed = JSON.parse(localStorage.getItem(`lova_${key}`) || 'null'); return Array.isArray(parsed) ? parsed : null; } catch { return null; } };
-    const sharedContentIsAuthoritative = Number(value.syncVersion || 0) >= 1;
-    let recoveredLocalData = false;
-    ['graphics','sites','platforms'].forEach(key => {
-      const hasRemoteArray = Array.isArray(value[key]);
-      const remoteItems = hasRemoteArray ? value[key] : [];
-      const localItems = cachedArray(key);
-      // Prefer populated shared data. If Supabase was accidentally saved empty,
-      // recover the owner's browser copy before showing an empty admin list.
-      // An explicit empty local array still means the owner intentionally cleared it.
-      if (remoteItems.length) data[key] = remoteItems;
-      else if (localItems?.length) { data[key] = localItems; recoveredLocalData = true; }
-      else if (localItems === null && Array.isArray(data[key]) && data[key].length) recoveredLocalData = true;
-      else data[key] = remoteItems;
-    });
+    data.graphics = Array.isArray(value.graphics) ? value.graphics : [];
+    data.sites = Array.isArray(value.sites) ? value.sites : [];
+    data.platforms = Array.isArray(value.platforms) ? value.platforms : [];
     data.home = { ...homeDefaults, ...(value.home || {}) };
     data.pageSettings = { ...pageSettingsDefaults, ...(value.pageSettings || {}) };
     data.customPages = Array.isArray(value.customPages) ? value.customPages : [];
     const whatsApp = data.platforms.find(item => /whatsapp|واتسئاپ|واتساپ/i.test(item.name || '') || /wa\.me/i.test(item.url || ''));
     if (whatsApp) { whatsApp.name = 'WhatsApp'; whatsApp.url = fixedWhatsAppUrl; }
     else data.platforms.unshift({ name: 'WhatsApp', url: fixedWhatsAppUrl });
-    const remoteCategories = value.categories || {};
-    const localHasCategories = (ownerCategories?.graphics || []).length || (ownerCategories?.sites || []).length;
-    if (sharedContentIsAuthoritative || (remoteCategories.graphics || []).length || (remoteCategories.sites || []).length) refreshLists(remoteCategories);
-    else refreshLists(ownerCategories);
-    localRecoveryPending = recoveredLocalData || (!sharedContentIsAuthoritative && (!(remoteCategories.graphics || []).length && !(remoteCategories.sites || []).length && !!localHasCategories));
+    refreshLists(value.categories);
     contentLoaded = true;
     fillHomeForm();
     fillPageCopyForm();
     render();
-  }
-  async function ensureContentLoaded() {
-    if (contentLoaded) return true;
-    if (!contentLoadPromise) {
-      contentLoadPromise = loadContent().then(() => true).catch(error => {
-        console.error('Could not load shared site content:', error);
-        const detail = String(error?.message || error?.details || 'هەڵەی پەیوەندی').replace(/\s+/g, ' ').slice(0, 100);
-        status.textContent = `داتاکان بار نەبوون (${detail}). چوونەژوورەوە دەتوانیت تاقی بکەیتەوە؛ بۆ پاشەکەوتکردن Supabase و SQL دەبێت چالاک بن.`;
-        return false;
-      }).finally(() => { contentLoadPromise = null; });
-    }
-    return contentLoadPromise;
   }
   function fillHomeForm() {
     const h = data.home || homeDefaults;
@@ -193,7 +161,6 @@
     await uploadImages(data.customPages, 'custom-pages');
     if (data.home?.image?.startsWith('data:image/')) await uploadImages([data.home], 'home');
     const content = {
-      syncVersion: 1,
       graphics: data.graphics,
       sites: data.sites,
       platforms: data.platforms,
@@ -210,13 +177,10 @@
     toast('گۆڕانکارییەکان بۆ هەموو سەردانکەران پاشەکەوت کران.');
   }
 
-  // All add/edit/delete controls share one ordered save queue so rapid edits
-  // cannot race and overwrite a newer version of the shared content.
-  let publishQueue = Promise.resolve();
+  // All add/edit/delete controls use this shared save path, including contact platforms.
   save = function () {
     if (!ownerSignedIn) return toast('سەرەتا بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.');
-    publishQueue = publishQueue.catch(() => {}).then(() => publish());
-    return publishQueue.catch(error => {
+    publish().catch(error => {
       console.error(error);
       const detail = String(error?.message || error?.details || error?.hint || 'هەڵەی نەناسراو').replace(/\s+/g, ' ').slice(0, 150);
       toast(`پاشەکەوت نەکرا: ${detail}`);
@@ -336,7 +300,7 @@
     h.badgeTwo = document.getElementById('homeBadgeTwo').value.trim();
     h.buttonWork = document.getElementById('homeButtonWork').value.trim();
     h.buttonContact = document.getElementById('homeButtonContact').value.trim();
-    h.image = document.getElementById('homeImageUrl').value.trim() || h.image || 'logo.jpg';
+    h.image = document.getElementById('homeImageUrl').value.trim() || h.image || 'logo.png';
     const file = document.getElementById('homeImageFile').files?.[0];
     const finish = () => publish().then(() => { document.getElementById('homeImageFile').value = ''; fillHomeForm(); }).catch(error => toast(`پاشەکەوت نەکرا: ${String(error?.message || 'هەڵەی نەناسراو').slice(0,120)}`));
     if (!file) return finish();
@@ -384,82 +348,49 @@
     setAccess();
     return;
   }
-  db = window.supabase.createClient(window.LOVA_SUPABASE_URL, window.LOVA_SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  db = window.supabase.createClient(window.LOVA_SUPABASE_URL, window.LOVA_SUPABASE_KEY);
   setAccess();
-  loginButton.disabled = false;
-  status.textContent = 'ئیمەیڵ و وشەی نهێنی بنووسە بۆ چوونەژوورەوە.';
+  loginButton.disabled = true;
+  status.textContent = 'داتاکان لە Supabase بار دەکرێن...';
 
   loginButton.addEventListener('click', async () => {
+    if (!contentLoaded) return toast('تکایە چاوەڕێ بکە داتاکان بار ببن.');
     const email = document.getElementById('ownerEmail').value.trim();
     const password = document.getElementById('ownerPassword').value;
-    if (!email || !password) { status.textContent = 'تکایە ئیمەیڵ و وشەی نهێنی پڕ بکەرەوە.'; return toast('ئیمەیڵ و وشەی نهێنی بنووسە.'); }
+    if (!email || !password) return toast('ئیمەیڵ و وشەی نهێنی بنووسە.');
     const button = document.getElementById('ownerLogin');
     button.disabled = true;
-    status.textContent = 'چوونەژوورەوە پشکنین دەکرێت...';
-    try {
-      const { data: authData, error } = await db.auth.signInWithPassword({ email, password });
-      if (error) {
-        console.error('Admin sign-in failed:', error);
-        status.textContent = 'چوونەژوورەوە سەرکەوتوو نەبوو. لە Supabase > Authentication > Users دڵنیابە هەژمارەکە دروستکراوە و ئیمەیڵەکە پشتڕاست کراوەتەوە.';
-        return toast('ئیمەیڵ یان وشەی نهێنی لە Supabase دروست نییە، یان هەژمارەکە پشتڕاست نەکراوەتەوە.');
-      }
-      if (String(authData?.user?.email || '').toLowerCase() !== ownerEmailAllowed) {
-        await db.auth.signOut();
-        status.textContent = `تەنها ${ownerEmailAllowed} دەسەڵاتی بەڕێوەبردنی هەیە.`;
-        return toast('ئەم ئیمەیڵە دەسەڵاتی بەڕێوەبەری نییە.');
-      }
-      ownerSignedIn = true;
-      setAccess();
-      document.getElementById('ownerPassword').value = '';
-      const loaded = await ensureContentLoaded();
-      let recovered = false;
-      let recoveryNote = '';
-      if (loaded && localRecoveryPending) {
-        try { await publish(); localRecoveryPending = false; recovered = true; }
-        catch (migrationError) { console.error('Local sample migration is still pending:', migrationError); recoveryNote = ' داتای کۆن لەم وێبگەڕە پیشان دەدرێت، بەڵام بۆ پاراستنی ئۆنلاین پێویستە Storage و policyی Supabase چالاک بێت.'; }
-      }
-      status.textContent = loaded
-        ? 'چوویتە ژوورەوە؛ ئێستا دەتوانیت بەشی بەڕێوەبردن بەکاربهێنیت.' + recoveryNote
-        : 'چوویتە ژوورەوە، بەڵام داتاکانی Supabase بار نەبوون. SQL و ڕێکخستنی داتابەیس بپشکنە؛ گۆڕانکارییەکان تا ئەو کاتە پاشەکەوت نابن.';
-      if (loaded) toast(recovered ? 'نموونە پاشەکەوتکراوەکانی وێبگەڕ گەڕێندرایەوە و پاشەکەوت کران.' : 'چوویتە ژوورەوە.');
-    } catch (error) {
-      console.error('Admin sign-in error:', error);
-      status.textContent = 'پەیوەندی بە Supabase نەکرا. ئینتەرنێت و supabase-config.js بپشکنە.';
-      toast('پەیوەندی بە Supabase نەکرا؛ دووبارە هەوڵ بدە.');
-    } finally {
-      button.disabled = false;
-    }
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    button.disabled = false;
+    if (error) return toast('ئیمەیڵ یان وشەی نهێنی دروست نییە.');
+    document.getElementById('ownerPassword').value = '';
   });
-
   document.getElementById('ownerLogout').addEventListener('click', async () => {
     await db.auth.signOut();
   });
 
-  db.auth.onAuthStateChange((_event, session) => {
-    ownerSignedIn = String(session?.user?.email || '').toLowerCase() === ownerEmailAllowed;
-    setAccess();
-    if (session && !ownerSignedIn) db.auth.signOut();
-    if (!ownerSignedIn) status.textContent = 'بۆ بینینی فۆڕمەکانی بەڕێوەبردن بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.';
-  });
-
-  ensureContentLoaded().then(loaded => {
-    if (ownerSignedIn) {
-      status.textContent = loaded
-        ? 'چوویتە ژوورەوە؛ دەتوانیت بەشی بەڕێوەبردن بەکاربهێنیت.'
-        : 'داتاکان بار نەبوون؛ Supabase و SQL بپشکنە.';
-    } else if (loaded) {
-      status.textContent = 'بۆ بینینی فۆڕمەکانی بەڕێوەبردن بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.';
+  (async () => {
+    try {
+      await loadContent();
+      loginButton.disabled = false;
+      const { data: { session } } = await db.auth.getSession();
+      ownerSignedIn = !!session;
+      setAccess();
+      status.textContent = ownerSignedIn
+        ? 'چوویتە ژوورەوە؛ دەتوانیت نموونە، وێنە، لیست و پلاتفۆرمەکان بەڕێوە ببەیت.'
+        : 'نموونەکان بۆ هەمووان دەردەکەون. بۆ دەستکاری بە ئیمەیڵ و وشەی نهێنی بچۆ ژوورەوە.';
+      db.auth.onAuthStateChange((_event, session) => {
+        ownerSignedIn = !!session;
+        setAccess();
+        status.textContent = ownerSignedIn
+          ? 'چوویتە ژوورەوە؛ گۆڕانکارییەکان بۆ هەمووان پاشەکەوت دەبن.'
+          : 'چوویتە دەرەوە؛ نموونە هاوبەشەکان بۆ خەڵک دەمێننەوە.';
+      });
+    } catch (error) {
+      console.error(error);
+      loginButton.disabled = true;
+      status.textContent = 'Supabase پەیوەست بوو، بەڵام داتابەیس/SQL ئامادە نییە یان URL و key هەڵەن.';
+      setAccess();
     }
-  });
-  // Keep public pages fresh for visitors who leave the page open. New visitors
-  // still get the current database version on their first page load.
-  let publicRefreshBusy = false;
-  async function refreshPublicContent() {
-    if (ownerSignedIn || document.hidden || publicRefreshBusy || !db) return;
-    publicRefreshBusy = true;
-    try { await loadContent(); } catch (error) { console.error('Public content refresh failed:', error); }
-    finally { publicRefreshBusy = false; }
-  }
-  window.setInterval(refreshPublicContent, 20000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshPublicContent(); });
+  })();
 })();
