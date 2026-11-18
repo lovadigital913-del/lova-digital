@@ -83,11 +83,118 @@
   admin.querySelector('.pagehead .sub').textContent = 'لە بەڕێوەبردنەوە ناوەڕۆکی پەڕەی سەرەکی، نموونەکان و پلاتفۆرمەکان بگۆڕە؛ پاشەکەوتەکان لە Supabase هەڵدەگیرێن و لە ماڵپەڕی گشتی نوێ دەبنەوە.';
   const oldLocalHint = [...admin.querySelectorAll('.hint')].find(element => element.textContent.includes('پاراستنی خۆجێییە'));
   if (oldLocalHint) oldLocalHint.textContent = 'ناوەڕۆکەکان لە Supabase پاشەکەوت دەکرێن و لە هەموو ئامێرێکەوە بەڕێوە دەبرێن.';
+  let adminNoticeBox = null;
+  if (oldLocalHint) {
+    adminNoticeBox = document.createElement('div');
+    adminNoticeBox.className = 'adminbox';
+    oldLocalHint.replaceWith(adminNoticeBox);
+    adminNoticeBox.append(oldLocalHint);
+  }
+  const makerBox = admin.querySelector('.list-maker')?.closest('.adminbox');
+  let graphicCategoryBox = null;
+  let websiteCategoryBox = null;
+  if (makerBox) {
+    const makeCategoryBox = (id, title, note) => {
+      const box = document.createElement('div');
+      box.className = 'adminbox';
+      box.innerHTML = `<h2>${title}</h2><p class="hint">${note}</p>`;
+      const section = document.getElementById(id)?.closest('section');
+      if (section) {
+        section.querySelector('h3')?.remove();
+        box.append(section);
+      }
+      return box;
+    };
+    graphicCategoryBox = makeCategoryBox('graphicListTags', 'بەڕێوەبردنی جۆرەکانی گرافیک', 'جۆری نوێ زیاد بکە، ناوی جۆرێک بگۆڕە، یان لایببە. نموونەکانت بەجێ دەمێنن.');
+    websiteCategoryBox = makeCategoryBox('siteListTags', 'بەڕێوەبردنی جۆرەکانی وێبسایت', 'جۆری نوێ زیاد بکە، ناوی جۆرێک بگۆڕە، یان لایببە. نموونەکانت بەجێ دەمێنن.');
+    makerBox.replaceWith(graphicCategoryBox, websiteCategoryBox);
+  }
   document.getElementById('pUrl')?.insertAdjacentHTML('afterend', '<input class="field upload-field" id="pImageFile" type="file" accept="image/*" aria-label="بارکردنی وێنەی پلاتفۆرم">');
+  const bulkShareBox = document.createElement('div');
+  bulkShareBox.className = 'adminbox';
+  bulkShareBox.id = 'bulkShareBox';
+  bulkShareBox.innerHTML = '<h2>ناردنی نموونەکان بۆ Telegram</h2><p class="hint">وێنەکان لەگەڵ دەق بۆ Telegram بنێرە. دوای کرتەکردن، چەناڵەکەت لە لیستی هاوبەشکردندا هەڵبژێرە. هەر جار تا ١٠ وێنە دەتوانرێت بنێردرێت.</p><div class="bulk-share-toolbar"><button class="btn" type="button" id="selectAllSamples">هەموو نموونەکان هەڵبژێرە</button><button class="btn" type="button" id="clearSelectedSamples">پاککردنەوەی هەڵبژاردن</button><span class="hint" id="selectedSamplesCount">هیچ نموونەیەک هەڵنەبژێردراوە</span></div><label class="bulk-share-caption-label" for="bulkShareCaption">دەقی پۆست</label><textarea class="field" id="bulkShareCaption" placeholder="دەقی پۆست بنووسە؛ لینکی نموونەکان خۆکارانە زیاد دەکرێت."></textarea><div class="bulk-share-actions"><button class="btn" type="button" id="saveSampleShareText" disabled>پاشەکەوتی دەقی نموونەی هەڵبژێردراو</button><button class="btn solid" type="button" id="prepareBulkShare">ئامادەکردنی وێنە و پۆست</button><button class="btn solid" type="button" id="shareBulkSamples" disabled>شیرکردن بۆ Telegram</button></div><p class="hint" id="bulkShareStatus" aria-live="polite"></p>';
   const status = document.getElementById('sharedStatus');
   const loginFields = document.getElementById('loginFields');
   const loginButton = document.getElementById('ownerLogin');
   const protectedBoxes = [...admin.querySelectorAll('.adminbox')].filter(box => box !== loginBox);
+  const adminStyle = document.createElement('style');
+  adminStyle.textContent = '.admin-sections-toolbar{position:sticky;top:12px;z-index:8;display:flex;align-items:center;gap:12px;padding:12px 14px;margin:18px 0;border:1px solid #ffffff20;border-radius:16px;background:#111018ed;backdrop-filter:blur(14px)}.admin-sections-toggle{display:inline-flex;align-items:center;gap:10px;border:1px solid #bc70ff66;border-radius:12px;padding:10px 15px;background:#a855f71b;color:white;font-weight:700}.admin-sections-toggle .hamburger{font-size:22px;line-height:1}.admin-sections-current{color:#d8b5ff;font-size:14px;font-weight:700}.admin-sections-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0 0 18px;padding:12px;border:1px solid #ffffff1b;border-radius:16px;background:#111018}.admin-sections-menu[hidden],.admin-section-panel[hidden]{display:none!important}.admin-sections-menu button{border:1px solid #ffffff1b;border-radius:11px;padding:10px 14px;background:#191621;color:#ddd5e5;text-align:right}.admin-sections-menu button[aria-current="page"]{border-color:#b65eff88;background:#a855f72b;color:#f1d8ff}.admin-section-panel>.adminbox:first-child{margin-top:0}.admin-section-panel>.adminbox:last-child{margin-bottom:0}.bulk-share-toolbar,.bulk-share-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}.bulk-share-caption-label{display:block;color:#e5d7f0;font-weight:700;margin:18px 0 8px}.bulk-share-caption{min-height:120px}.admin-sample-select{accent-color:#a855f7;width:19px;height:19px;vertical-align:middle;margin-inline-end:9px}.sample-select-all{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:10px 13px;border:1px solid #ffffff18;border-radius:11px;background:#191621;color:#e0d9e9}.adminrow-sample-info{display:flex;align-items:center;gap:10px;min-width:0}.adminrow-sample-info>span{min-width:0}.admin-sample-actions{display:flex;gap:8px;align-items:center;flex:none}@media(max-width:600px){.admin-sections-toolbar{top:8px}.admin-sections-menu{grid-template-columns:1fr}.bulk-share-toolbar,.bulk-share-actions{align-items:stretch;flex-direction:column}.bulk-share-toolbar button,.bulk-share-actions button{width:100%}.adminrow-sample-info{flex:1}.admin-sample-actions{width:100%;justify-content:flex-end}.adminrow.has-share{align-items:flex-start}}';
+  document.head.append(adminStyle);
+  const sections = [
+    { id:'home', title:'پەڕەی سەرەکی', description:'وێنە و دەقی سەرەکیی وێبسایت بگۆڕە.', boxes:[homeBox] },
+    { id:'copy', title:'دەق و ناوی پەڕەکان', description:'سەردێڕ و دەقی پەڕەکان ڕێکبخە.', boxes:[pageTextBox] },
+    { id:'pages', title:'پەڕە و نموونەی تایبەت', description:'پەڕەی نوێ و نموونەکانی بەڕێوەببە.', boxes:[customPagesBox, customManager] },
+    { id:'graphics', title:'گرافیک دیزاین', description:'نموونە، جۆر و گۆڕانکارییە پەیوەندیدارەکانی گرافیک.', boxes:[] },
+    { id:'websites', title:'وێبسایت', description:'نموونە و جۆرەکانی وێبسایت بەڕێوەببە.', boxes:[] },
+    { id:'contact', title:'پەیوەندی و پلاتفۆرمەکان', description:'لینک و زانیاریی پەیوەندی بگۆڕە.', boxes:[] },
+    { id:'sharing', title:'شیرکردن بۆ Telegram', description:'نموونەکان هەڵبژێرە و وێنەیان بۆ چەناڵەکەت بنێرە.', boxes:[bulkShareBox] }
+  ];
+  protectedBoxes.forEach(box => {
+    if (box === homeBox || box === pageTextBox || box === customPagesBox || box === customManager || box === adminNoticeBox) {
+      if (box === adminNoticeBox) sections[0].boxes.push(box);
+    } else if (box.querySelector('#pName, #adminPlatforms')) {
+      sections[5].boxes.push(box);
+    } else if (box.querySelector('#gTitle, #adminGraphics, #graphicListTags')) {
+      sections[3].boxes.push(box);
+    } else if (box.querySelector('#sTitle, #adminSites, #siteListTags')) {
+      sections[4].boxes.push(box);
+    } else if (box === bulkShareBox) {
+      sections[6].boxes.push(box);
+    } else {
+      sections[1].boxes.push(box);
+    }
+  });
+  const sectionToolbar = document.createElement('div');
+  sectionToolbar.className = 'admin-sections-toolbar';
+  sectionToolbar.innerHTML = '<button class="admin-sections-toggle" type="button" aria-expanded="false" aria-controls="adminSectionsMenu"><span class="hamburger" aria-hidden="true">☰</span><span>بەشەکان</span></button><span class="admin-sections-current" id="adminSectionCurrent">گرافیک دیزاین</span>';
+  loginBox.after(sectionToolbar);
+  const sectionMenu = document.createElement('nav');
+  sectionMenu.id = 'adminSectionsMenu';
+  sectionMenu.className = 'admin-sections-menu';
+  sectionMenu.hidden = true;
+  sectionMenu.setAttribute('aria-label', 'بەشەکانی بەڕێوەبردن');
+  const sectionPanels = new Map();
+  let activeSectionId = 'graphics';
+  sections.forEach((section, index) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.dataset.adminSection = section.id;
+    option.setAttribute('aria-current', section.id === activeSectionId ? 'page' : 'false');
+    option.textContent = section.title;
+    sectionMenu.append(option);
+    const panel = document.createElement('section');
+    panel.className = 'admin-section-panel';
+    panel.dataset.adminPanel = section.id;
+    panel.hidden = section.id !== activeSectionId;
+    const heading = document.createElement('div');
+    heading.className = 'adminbox';
+    heading.innerHTML = `<h2>${safe(section.title)}</h2><p class="hint">${safe(section.description)}</p>`;
+    panel.append(heading);
+    section.boxes.forEach(box => panel.append(box));
+    sectionPanels.set(section.id, panel);
+  });
+  sectionToolbar.after(sectionMenu);
+  sections.forEach(section => sectionMenu.after(sectionPanels.get(section.id)));
+  const sectionToggle = sectionToolbar.querySelector('.admin-sections-toggle');
+  sectionToggle.addEventListener('click', () => {
+    sectionMenu.hidden = !sectionMenu.hidden;
+    sectionToggle.setAttribute('aria-expanded', String(!sectionMenu.hidden));
+  });
+  sectionMenu.addEventListener('click', event => {
+    const option = event.target.closest('[data-admin-section]');
+    if (!option) return;
+    sections.forEach(section => {
+      const selected = section.id === option.dataset.adminSection;
+      activeSectionId = option.dataset.adminSection;
+      sectionPanels.get(section.id).hidden = !selected;
+      sectionMenu.querySelector(`[data-admin-section="${section.id}"]`).setAttribute('aria-current', selected ? 'page' : 'false');
+    });
+    document.getElementById('adminSectionCurrent').textContent = sections.find(section => section.id === option.dataset.adminSection).title;
+    sectionMenu.hidden = true;
+    sectionToggle.setAttribute('aria-expanded', 'false');
+    sectionToolbar.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
   let db = null;
   let ownerSignedIn = false;
   let contentLoaded = false;
@@ -96,6 +203,12 @@
     protectedBoxes.forEach(box => box.style.display = ownerSignedIn ? '' : 'none');
     loginFields.style.display = ownerSignedIn ? 'none' : 'grid';
     document.getElementById('ownerLogout').style.display = ownerSignedIn ? '' : 'none';
+    sectionToolbar.style.display = ownerSignedIn ? 'flex' : 'none';
+    sectionMenu.hidden = true;
+    sectionToggle.setAttribute('aria-expanded', 'false');
+    sectionPanels.forEach((panel, id) => { panel.hidden = !ownerSignedIn || id !== activeSectionId; });
+    if (!ownerSignedIn) clearPreparedShare();
+    updateBulkShareControls();
   }
   function refreshLists(cats) {
     ownerCategories = cats || { graphics: [], sites: [] };
@@ -156,6 +269,7 @@
   async function publish() {
     if (!ownerSignedIn) throw new Error('owner sign in required');
     if (!contentLoaded) throw new Error('Supabase content has not loaded; refusing to overwrite shared content.');
+    clearPreparedShare();
     await uploadImages(data.graphics, 'graphics');
     await uploadImages(data.sites, 'websites');
     await uploadImages(data.platforms, 'platforms');
@@ -192,19 +306,185 @@
       return false;
     });
   };
+  const selectedSamples = new Set();
+  let preparedBulkShare = null;
+  const makeShareId = () => globalThis.crypto?.randomUUID?.() || `sample-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  function ensureSampleShareId(item) {
+    if (!item.shareId) item.shareId = makeShareId();
+    return item.shareId;
+  }
+  function findSample(kind, shareId) {
+    return data[kind]?.find(item => ensureSampleShareId(item) === shareId);
+  }
+  function updateBulkShareControls() {
+    const count = document.getElementById('selectedSamplesCount');
+    const saveTextButton = document.getElementById('saveSampleShareText');
+    const shareButton = document.getElementById('shareBulkSamples');
+    const items = [...selectedSamples].map(key => {
+      const [kind, shareId] = key.split(':');
+      const item = findSample(kind, shareId);
+      return item ? { kind, shareId, item } : null;
+    }).filter(Boolean);
+    if (count) count.textContent = items.length ? `${items.length} نموونە هەڵبژێردراوە${items.length > 10 ? ` · لەم جارەدا ١٠ دانە دەبنێردرێن` : ''}` : 'هیچ نموونەیەک هەڵنەبژێردراوە';
+    if (saveTextButton) saveTextButton.disabled = !ownerSignedIn || items.length !== 1;
+    if (shareButton) shareButton.disabled = !ownerSignedIn || !preparedBulkShare;
+    return items;
+  }
+  function clearPreparedShare() {
+    preparedBulkShare = null;
+    const button = document.getElementById('shareBulkSamples');
+    if (button) button.disabled = true;
+  }
+  function sampleCaption(item) {
+    const text = item.shareText || [item.title, item.desc].filter(Boolean).join('\n');
+    return String(text).split(/\r?\n/).filter(line => !/#sample=.*&kind=(graphics|sites)/.test(line)).join('\n').trim();
+  }
   adminRows = function (kind, id) {
     const isSampleList = kind === 'graphics' || kind === 'sites';
-    document.getElementById(id).innerHTML = data[kind].map((item, i) =>
-        (() => {
-          const link = isSampleList ? sampleShareLink(kind, item) : '';
-          const defaultText = [item.title, item.desc, link].filter(Boolean).join('\n');
-          return `<div class="adminrow ${isSampleList ? 'has-share' : ''}"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span>${isSampleList ? `<div class="adminrow-share"><label class="hint" for="share-copy-${kind}-${i}">دەقی شیرکردن (دەتوانیت دەستکاری بکەیت)</label><textarea class="field" id="share-copy-${kind}-${i}" data-share-copy="${kind}" data-index="${i}" rows="3">${safe(item.shareText || defaultText)}</textarea><div class="adminrow-share-actions"><select class="field" data-share-platform="${kind}" data-index="${i}" aria-label="پلاتفۆرم بۆ کردنەوە لە کاتی نەبوونی هاوبەشکردنی وێنە">${(data.platforms || []).map((platform, platformIndex) => `<option value="${platformIndex}">${safe(platform.name)}</option>`).join('') || '<option value="">پلاتفۆرمێک زیاد بکە</option>'}</select><button class="btn" type="button" data-share-save="${kind}" data-index="${i}">پاشەکەوتی دەق</button><button class="btn solid" type="button" data-share-sample="${kind}" data-index="${i}" ${data.platforms?.length ? '' : 'disabled'}>شیرکردنی وێنە و دەق</button></div></div>` : ''}</div>`;
-        })()
-    ).join('') || '<span class="hint">هیچ دانەیەک نییە.</span>';
+    document.getElementById(id).innerHTML = data[kind].map((item, i) => {
+      if (!isSampleList) return `<div class="adminrow"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span></div>`;
+      const shareId = ensureSampleShareId(item);
+      const selected = selectedSamples.has(`${kind}:${shareId}`);
+      return `<div class="adminrow"><span class="adminrow-sample-info"><input class="admin-sample-select" type="checkbox" data-sample-select="${kind}" data-share-id="${safe(shareId)}" aria-label="هەڵبژاردنی ${safe(item.title || 'نموونە')}" ${selected ? 'checked' : ''}>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">` : ''}<span>${safe(item.title || item.name)} <span class="hint">${safe(item.category || '')}</span></span></span><span class="admin-sample-actions"><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button><button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span></div>`;
+    }).join('') || '<span class="hint">هیچ دانەیەک نییە.</span>';
+    updateBulkShareControls();
   };
-  const shareStyle = document.createElement('style');
-  shareStyle.textContent = '.adminrow.has-share{flex-wrap:wrap}.adminrow-share{flex:0 0 100%;display:grid;gap:8px;width:100%;padding-top:10px;border-top:1px solid #ffffff12}.adminrow-share .field{min-width:0}.adminrow-share-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.adminrow-share-actions select{width:auto;min-width:150px}.adminrow-share-actions button{padding:9px 14px}.graphics-admin-link{display:inline-flex;margin-top:16px}@media(max-width:600px){.adminrow-share-actions{align-items:stretch;flex-direction:column}.adminrow-share-actions select,.adminrow-share-actions button{width:100%}}';
-  document.head.append(shareStyle);
+  admin.addEventListener('change', event => {
+    const checkbox = event.target.closest('[data-sample-select]');
+    if (!checkbox) return;
+    const key = `${checkbox.dataset.sampleSelect}:${checkbox.dataset.shareId}`;
+    if (checkbox.checked) selectedSamples.add(key);
+    else selectedSamples.delete(key);
+    clearPreparedShare();
+    const items = updateBulkShareControls();
+    const caption = document.getElementById('bulkShareCaption');
+    if (caption && items.length === 1) {
+      caption.value = sampleCaption(items[0].item);
+    } else if (caption && items.length > 1 && !caption.value.trim()) {
+      caption.value = 'نموونەکانمان، بە وێنە و کورتەی وەسف.';
+    }
+  });
+  document.getElementById('selectAllSamples').addEventListener('click', () => {
+    ['graphics', 'sites'].forEach(kind => (data[kind] || []).forEach(item => selectedSamples.add(`${kind}:${ensureSampleShareId(item)}`)));
+    clearPreparedShare();
+    render();
+  });
+  document.getElementById('clearSelectedSamples').addEventListener('click', () => {
+    selectedSamples.clear();
+    clearPreparedShare();
+    document.getElementById('bulkShareCaption').value = '';
+    render();
+  });
+  document.getElementById('bulkShareCaption').addEventListener('input', clearPreparedShare);
+  function sampleShareLink(kind, item) {
+    const base = 'https://lovadigital913-del.github.io/lova-digital/';
+    return `${base}#sample=${encodeURIComponent(ensureSampleShareId(item))}&kind=${kind}`;
+  }
+  function collectionShareLink(items) {
+    const base = 'https://lovadigital913-del.github.io/lova-digital/';
+    const ids = items.map(({ kind, item }) => `${kind}~${ensureSampleShareId(item)}`).join(',');
+    return `${base}#collection=${encodeURIComponent(ids)}`;
+  }
+  function shareImageUrl(kind, item, index) {
+    return item.image || (kind === 'graphics' ? sampleGraphic(index % 6) : finalSitePreview(item));
+  }
+  async function createShareFile(item, kind, index) {
+    const response = await fetch(shareImageUrl(kind, item, index));
+    if (!response.ok) throw new Error(`وێنەی «${item.title || 'نموونە'}» بار نەکرا (${response.status}).`);
+    let blob = await response.blob();
+    if (blob.type === 'image/svg+xml') {
+      const bitmap = await createImageBitmap(blob);
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width || 960;
+      canvas.height = bitmap.height || 560;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      bitmap.close();
+      blob = await new Promise((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('گۆڕینی وێنە بۆ PNG سەرکەوتوو نەبوو.')), 'image/png'));
+    }
+    if (!blob.type.startsWith('image/')) throw new Error(`فایلی وێنەی «${item.title || 'نموونە'}» جۆری دروستی نییە.`);
+    const filename = `${String(item.title || 'sample').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-').slice(0, 70) || 'sample'}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`;
+    return new File([blob], filename, { type: blob.type });
+  }
+  document.getElementById('prepareBulkShare').addEventListener('click', async event => {
+    if (!ownerSignedIn) return toast('سەرەتا بە هەژماری بەڕێوەبەر بچۆ ژوورەوە.');
+    const statusText = document.getElementById('bulkShareStatus');
+    const button = event.currentTarget;
+    const selected = updateBulkShareControls().slice(0, 10);
+    if (!selected.length) return toast('سەرەتا لانیکەم یەک نموونە هەڵبژێرە.');
+    const captionField = document.getElementById('bulkShareCaption');
+    const link = selected.length === 1 ? sampleShareLink(selected[0].kind, selected[0].item) : collectionShareLink(selected);
+    const caption = [captionField.value.trim(), link].filter(Boolean).join('\n');
+    if (caption.length > 1024) return toast('دەقی پۆست لەگەڵ لینک نابێت لە ١٠٢٤ پیت زیاتر بێت.');
+    clearPreparedShare();
+    button.disabled = true;
+    statusText.textContent = 'ناسنامەی نموونەکان پاشەکەوت و وێنەکان بار دەکرێن...';
+    try {
+      for (const { item } of selected) ensureSampleShareId(item);
+      await publish();
+      const files = await Promise.all(selected.map(({ kind, item }) => createShareFile(item, kind, data[kind].indexOf(item))));
+      preparedBulkShare = { files, caption, text: captionField.value.trim(), keys: selected.map(({ kind, shareId }) => `${kind}:${shareId}`), url: link };
+      document.getElementById('shareBulkSamples').disabled = false;
+      statusText.textContent = `${files.length} وێنە ئامادەن. دوگمەی شیرکردن دابگرە و Telegram و چەناڵەکەت هەڵبژێرە.`;
+    } catch (error) {
+      console.error(error);
+      statusText.textContent = `ئامادەکردن سەرکەوتوو نەبوو: ${String(error?.message || 'هەڵەی نەناسراو').slice(0, 180)}`;
+    } finally {
+      button.disabled = false;
+    }
+  });
+  document.getElementById('saveSampleShareText').addEventListener('click', async () => {
+    const items = updateBulkShareControls();
+    if (items.length !== 1) return;
+    items[0].item.shareText = document.getElementById('bulkShareCaption').value.trim();
+    if (await save(items[0].kind)) toast('دەقی نموونە پاشەکەوت کرا.');
+  });
+  document.getElementById('shareBulkSamples').addEventListener('click', async event => {
+    if (!ownerSignedIn || !preparedBulkShare) return;
+    const share = preparedBulkShare;
+    const statusText = document.getElementById('bulkShareStatus');
+    const button = event.currentTarget;
+    const nativeShareAvailable = typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: share.files });
+    if (nativeShareAvailable) {
+      try {
+        await navigator.share({ files: share.files, title: 'نموونەکانی Lova Digital', text: share.caption });
+        share.keys.forEach(key => selectedSamples.delete(key));
+        clearPreparedShare();
+        render();
+        statusText.textContent = 'هاوبەشکردن تەواو بوو. ئەگەر هێشتا نموونەت ماوە، دووبارە ئامادەی بکە.';
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          statusText.textContent = 'هاوبەشکردن هەڵوەشێندرایەوە؛ هەڵبژاردنەکەت پارێزراوە.';
+          return;
+        }
+        console.error(error);
+        statusText.textContent = 'هاوبەشکردنی ڕاستەوخۆ کار نەکرد؛ وێنەکان دادەبەزێنرێن بۆ هاوپێچکردنی دەستی.';
+        downloadShareFallback(share, statusText);
+      }
+      return;
+    }
+    downloadShareFallback(share, statusText);
+    button.disabled = true;
+  });
+  async function downloadShareFallback(share, statusText) {
+    const telegramWindow = window.open('about:blank', '_blank');
+    share.files.forEach(file => {
+      const url = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.name;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    });
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(share.caption);
+      copied = true;
+    } catch (error) {
+      console.warn('Could not copy Telegram post text.', error);
+    }
+    if (telegramWindow) telegramWindow.location.href = `https://t.me/share/url?url=${encodeURIComponent(share.url)}&text=${encodeURIComponent(share.text)}`;
+    statusText.textContent = `وێنەکان دابەزێنران${copied ? ' و دەقی پۆست کۆپی کرا' : ''}. لە Telegram وێنەکان هاوپێچ بکە و بۆ چەناڵ بنێرە؛ هەڵبژاردنەکە دەمێنێتەوە.`;
+  }
   function sampleShareLink(kind, item) {
     const base = 'https://lovadigital913-del.github.io/lova-digital/';
     return `${base}#sample=${encodeURIComponent(item.title || 'sample')}&kind=${kind}`;
