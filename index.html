@@ -161,4 +161,6 @@ collectionOverlay.addEventListener('click',event=>{if(event.target.closest('[dat
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeSampleCollection()});
 window.addEventListener('hashchange',openSharedSampleFromHash);
 setTimeout(openSharedSampleFromHash,1000);
-</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="supabase-bridge.js"></script></body></html>
+const collectionCaptionStyle=document.createElement('style');collectionCaptionStyle.textContent='.sample-collection-card small{display:block;white-space:pre-wrap;line-height:1.7;text-align:right}';document.head.append(collectionCaptionStyle);
+new MutationObserver(()=>collectionOverlay.querySelectorAll('.sample-collection-card').forEach(card=>{const kind=card.dataset.sampleKind,index=Number(card.dataset.sampleIndex),item=data[kind]?.[index];if(!item)return;const caption=String(item.shareText||item.desc||item.category||'').split(/\r?\n/).filter(line=>!/#sample=.*&kind=(graphics|sites)/.test(line)).join('\n').trim(),description=card.querySelector('small'),text=caption||item.category||'';if(description&&description.textContent!==text)description.textContent=text})).observe(collectionOverlay,{childList:true,subtree:true});
+</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="supabase-bridge.js?v=20261118-linkfix"></script></body></html>

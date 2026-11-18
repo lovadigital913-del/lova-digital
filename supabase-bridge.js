@@ -533,20 +533,19 @@
     const link = sampleShareLink(kind, item);
     const text = [caption, link].filter(Boolean).join('\n');
     if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-      const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       let copiedLink = Promise.resolve(false);
-      if (isAppleMobile && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         try {
           copiedLink = navigator.clipboard.writeText(link).then(() => true).catch(error => {
-            console.warn('Could not copy sample link for iOS sharing.', error);
+            console.warn('Could not copy sample link for sharing.', error);
             return false;
           });
         } catch (error) {
-          console.warn('Could not copy sample link for iOS sharing.', error);
+          console.warn('Could not copy sample link for sharing.', error);
         }
       }
       try {
-        await navigator.share({ files: [file], title: item.title || 'Lova Digital', text });
+        await navigator.share({ files: [file], title: item.title || 'Lova Digital', text: caption, url: link });
         const linkWasCopied = await copiedLink;
         toast(linkWasCopied
           ? 'وێنە و دەق هاوبەش کران و لینکی نموونە کۆپی کرا؛ ئەگەر لە کپشنی Telegram نەبوو، لە کپشنەکە دایبنێ.'
@@ -798,10 +797,6 @@
     const text = share.caption.split(share.url).join('').trim();
     if (telegramWindow) telegramWindow.location.href = `https://t.me/share/url?url=${encodeURIComponent(share.url)}&text=${encodeURIComponent(text)}`;
     statusText.textContent = `وێنەکان دابەزێنران${copied ? ' و دەقی پۆست کۆپی کرا' : ''}. لە Telegram وێنەکان هاوپێچ بکە و بۆ چەناڵ بنێرە؛ هەڵبژاردنەکە دەمێنێتەوە.`;
-  }
-  function sampleShareLink(kind, item) {
-    const base = 'https://lovadigital913-del.github.io/lova-digital/';
-    return `${base}#sample=${encodeURIComponent(item.title || 'sample')}&kind=${kind}`;
   }
   function platformShareUrl(platform, text, imageUrl) {
     const name = String(platform?.name || '').toLowerCase();
