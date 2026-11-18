@@ -113,13 +113,13 @@
   const bulkShareBox = document.createElement('div');
   bulkShareBox.className = 'adminbox';
   bulkShareBox.id = 'bulkShareBox';
-  bulkShareBox.innerHTML = '<h2>شیرکردنی نموونەکان</h2><p class="hint">نموونەکان هەڵبژێرە؛ دوای ئامادەبوونی وێنەکان تەنها دوگمەی شیرکردن دابگرە و لە لیستی ئەپەکانت Telegram یان پلاتفۆرمێکی تر هەڵبژێرە. بۆ ناردن لە چەناڵی Telegram، چەناڵەکەت لە Telegram هەڵبژێرە. هەر جار تا ١٠ نموونە.</p><div class="bulk-share-toolbar"><button class="btn" type="button" id="selectAllSamples">هەموو نموونەکان هەڵبژێرە</button><button class="btn" type="button" id="clearSelectedSamples">پاککردنەوەی هەڵبژاردن</button><span class="hint" id="selectedSamplesCount">هیچ نموونەیەک هەڵنەبژێردراوە</span></div><label class="bulk-share-caption-label" for="bulkShareCaption">دەقی پۆست</label><textarea class="field" id="bulkShareCaption" placeholder="دەقی پۆست بنووسە؛ لینکی نموونەکان خۆکارانە زیاد دەکرێت."></textarea><div class="bulk-share-actions"><button class="btn" type="button" id="saveSampleShareText" disabled>پاشەکەوتی دەقی نموونەی هەڵبژێردراو</button><button class="btn solid" type="button" id="shareBulkSamples" disabled>شیرکردنی نموونە هەڵبژێردراو</button></div><p class="hint" id="bulkShareStatus" aria-live="polite">نموونەکان هەڵبژێرە بۆ ئامادەکردنی خۆکار.</p>';
+  bulkShareBox.innerHTML = '<h2>شیرکردنی نموونەکان</h2><p class="hint">نموونەکان هەڵبژێرە؛ دوای ئامادەبوونی وێنەکان تەنها دوگمەی شیرکردن دابگرە و لە لیستی ئەپەکانت Telegram یان پلاتفۆرمێکی تر هەڵبژێرە. دەقی هەر نموونەیەک بە ڕیز لە کپشن دێت و لە بەستەری کۆمەڵەکە لە ژێر وێنەی خۆی دەردەکەوێت. Telegram لە ئەلبومی چەند وێنەییدا تەنها یەک کپشن هەیە. بۆ ناردن لە چەناڵی Telegram، چەناڵەکەت لە Telegram هەڵبژێرە. هەر جار تا ١٠ نموونە.</p><div class="bulk-share-toolbar"><button class="btn" type="button" id="selectAllSamples">هەموو نموونەکان هەڵبژێرە</button><button class="btn" type="button" id="clearSelectedSamples">پاککردنەوەی هەڵبژاردن</button><span class="hint" id="selectedSamplesCount">هیچ نموونەیەک هەڵنەبژێردراوە</span></div><label class="bulk-share-caption-label" for="bulkShareCaption">دەقی پۆست</label><textarea class="field" id="bulkShareCaption" placeholder="دەقی پۆست بنووسە؛ لینکی نموونەکان خۆکارانە زیاد دەکرێت."></textarea><div class="bulk-share-actions"><button class="btn" type="button" id="saveSampleShareText" disabled>پاشەکەوتی دەقی نموونەی هەڵبژێردراو</button><button class="btn solid" type="button" id="shareBulkSamples" disabled>شیرکردنی نموونە هەڵبژێردراو</button></div><p class="hint" id="bulkShareStatus" aria-live="polite">نموونەکان هەڵبژێرە بۆ ئامادەکردنی خۆکار.</p>';
   const status = document.getElementById('sharedStatus');
   const loginFields = document.getElementById('loginFields');
   const loginButton = document.getElementById('ownerLogin');
   const protectedBoxes = [...admin.querySelectorAll('.adminbox')].filter(box => box !== loginBox);
   const adminStyle = document.createElement('style');
-  adminStyle.textContent = '.admin-sections-toolbar{position:sticky;top:12px;z-index:8;display:flex;align-items:center;gap:12px;padding:12px 14px;margin:18px 0;border:1px solid #ffffff20;border-radius:16px;background:#111018ed;backdrop-filter:blur(14px)}.admin-sections-toggle{display:inline-flex;align-items:center;gap:10px;border:1px solid #bc70ff66;border-radius:12px;padding:10px 15px;background:#a855f71b;color:white;font-weight:700}.admin-sections-toggle .hamburger{font-size:22px;line-height:1}.admin-sections-current{color:#d8b5ff;font-size:14px;font-weight:700}.admin-sections-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0 0 18px;padding:12px;border:1px solid #ffffff1b;border-radius:16px;background:#111018}.admin-sections-menu[hidden],.admin-section-panel[hidden]{display:none!important}.admin-sections-menu button{border:1px solid #ffffff1b;border-radius:11px;padding:10px 14px;background:#191621;color:#ddd5e5;text-align:right}.admin-sections-menu button[aria-current="page"]{border-color:#b65eff88;background:#a855f72b;color:#f1d8ff}.admin-section-panel>.adminbox:first-child{margin-top:0}.admin-section-panel>.adminbox:last-child{margin-bottom:0}.bulk-share-toolbar,.bulk-share-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}.bulk-share-caption-label{display:block;color:#e5d7f0;font-weight:700;margin:18px 0 8px}.bulk-share-caption{min-height:120px}.admin-sample-select{accent-color:#a855f7;width:19px;height:19px;vertical-align:middle;margin-inline-end:9px}.sample-select-all{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:10px 13px;border:1px solid #ffffff18;border-radius:11px;background:#191621;color:#e0d9e9}.adminrow-sample-info{display:flex;align-items:center;gap:10px;min-width:0}.adminrow-sample-info>span{min-width:0}.admin-sample-actions{display:flex;gap:8px;align-items:center;flex:none}@media(max-width:600px){.admin-sections-toolbar{top:8px}.admin-sections-menu{grid-template-columns:1fr}.bulk-share-toolbar,.bulk-share-actions{align-items:stretch;flex-direction:column}.bulk-share-toolbar button,.bulk-share-actions button{width:100%}.adminrow-sample-info{flex:1}.admin-sample-actions{width:100%;justify-content:flex-end}.adminrow.has-share{align-items:flex-start}}';
+  adminStyle.textContent = '.admin-sections-toolbar{position:sticky;top:12px;z-index:8;display:flex;align-items:center;gap:12px;padding:12px 14px;margin:18px 0;border:1px solid #ffffff20;border-radius:16px;background:#111018ed;backdrop-filter:blur(14px)}.admin-sections-toggle{display:inline-flex;align-items:center;gap:10px;border:1px solid #bc70ff66;border-radius:12px;padding:10px 15px;background:#a855f71b;color:white;font-weight:700}.admin-sections-toggle .hamburger{font-size:22px;line-height:1}.admin-sections-current{color:#d8b5ff;font-size:14px;font-weight:700}.admin-sections-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0 0 18px;padding:12px;border:1px solid #ffffff1b;border-radius:16px;background:#111018}.admin-sections-menu[hidden],.admin-section-panel[hidden]{display:none!important}.admin-sections-menu button{border:1px solid #ffffff1b;border-radius:11px;padding:10px 14px;background:#191621;color:#ddd5e5;text-align:right}.admin-sections-menu button[aria-current="page"]{border-color:#b65eff88;background:#a855f72b;color:#f1d8ff}.admin-section-panel>.adminbox:first-child{margin-top:0}.admin-section-panel>.adminbox:last-child{margin-bottom:0}.bulk-share-toolbar,.bulk-share-actions,.sample-list-share-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}.sample-list-share-actions{padding-top:12px;border-top:1px solid #ffffff16}.bulk-share-caption-label{display:block;color:#e5d7f0;font-weight:700;margin:18px 0 8px}.bulk-share-caption{min-height:120px}.admin-sample-select{accent-color:#a855f7;width:19px;height:19px;vertical-align:middle;margin-inline-end:9px}.sample-select-all{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:10px 13px;border:1px solid #ffffff18;border-radius:11px;background:#191621;color:#e0d9e9}.adminrow-sample-info{display:flex;align-items:center;gap:10px;min-width:0}.adminrow-sample-info>span{min-width:0}.admin-sample-actions{display:flex;gap:8px;align-items:center;flex:none}@media(max-width:600px){.admin-sections-toolbar{top:8px}.admin-sections-menu{grid-template-columns:1fr}.bulk-share-toolbar,.bulk-share-actions,.sample-list-share-actions{align-items:stretch;flex-direction:column}.bulk-share-toolbar button,.bulk-share-actions button,.sample-list-share-actions button{width:100%}.adminrow-sample-info{flex:1}.admin-sample-actions{width:100%;justify-content:flex-end}.adminrow.has-share{align-items:flex-start}}';
   document.head.append(adminStyle);
   const sections = [
     { id:'home', title:'پەڕەی سەرەکی', description:'وێنە و دەقی سەرەکیی وێبسایت بگۆڕە.', boxes:[homeBox] },
@@ -207,8 +207,13 @@
     sectionMenu.hidden = true;
     sectionToggle.setAttribute('aria-expanded', 'false');
     sectionPanels.forEach((panel, id) => { panel.hidden = !ownerSignedIn || id !== activeSectionId; });
-    if (!ownerSignedIn) clearPreparedShare();
+    if (!ownerSignedIn) {
+      bulkPreparationVersion++;
+      clearTimeout(bulkPreparationTimer);
+      clearPreparedShare();
+    }
     updateBulkShareControls();
+    refreshViewerShareButton();
   }
   function refreshLists(cats) {
     ownerCategories = cats || { graphics: [], sites: [] };
@@ -289,6 +294,7 @@
       .update({ content, updated_at: new Date().toISOString() }).eq('id', 'main').select('id');
     if (error) throw error;
     if (!updated?.length) throw new Error('ڕێگەی نووسینی داتا پێشتر ڕێکنەخراوە.');
+    [...data.graphics, ...data.sites].forEach(item => unsavedSampleShareIds.delete(item));
     render();
     toast('گۆڕانکارییەکان بۆ هەموو سەردانکەران پاشەکەوت کران.');
   }
@@ -310,9 +316,14 @@
   let preparedBulkShare = null;
   let bulkPreparationTimer = null;
   let bulkPreparationVersion = 0;
+  let bulkCaptionEdited = false;
+  const unsavedSampleShareIds = new WeakSet();
   const makeShareId = () => globalThis.crypto?.randomUUID?.() || `sample-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   function ensureSampleShareId(item) {
-    if (!item.shareId) item.shareId = makeShareId();
+    if (!item.shareId) {
+      item.shareId = makeShareId();
+      unsavedSampleShareIds.add(item);
+    }
     return item.shareId;
   }
   function findSample(kind, shareId) {
@@ -330,6 +341,7 @@
     if (count) count.textContent = items.length ? `${items.length} نموونە هەڵبژێردراوە${items.length > 10 ? ` · لەم جارەدا ١٠ دانە دەبنێردرێن` : ''}` : 'هیچ نموونەیەک هەڵنەبژێردراوە';
     if (saveTextButton) saveTextButton.disabled = !ownerSignedIn || items.length !== 1;
     if (shareButton) shareButton.disabled = !ownerSignedIn || !preparedBulkShare;
+    document.querySelectorAll('[data-share-selected]').forEach(button => { button.disabled = !ownerSignedIn || !preparedBulkShare; });
     return items;
   }
   function clearPreparedShare() {
@@ -358,6 +370,15 @@
     const text = item.shareText || [item.title, item.desc].filter(Boolean).join('\n');
     return String(text).split(/\r?\n/).filter(line => !/#sample=.*&kind=(graphics|sites)/.test(line)).join('\n').trim();
   }
+  ['graphics', 'sites'].forEach(kind => {
+    const list = document.getElementById(kind === 'graphics' ? 'adminGraphics' : 'adminSites');
+    if (!list) return;
+    const actions = document.createElement('div');
+    actions.className = 'sample-list-share-actions';
+    actions.innerHTML = `<span class="hint">نموونە چێککراوەکان بە وێنە و دەقی تایبەتی هەر یەک شیر بکە.</span><button class="btn solid" type="button" data-share-selected="${kind}" disabled>شیرکردنی هەڵبژێردراوەکان</button>`;
+    list.after(actions);
+    actions.querySelector('button').addEventListener('click', sharePreparedSamples);
+  });
   adminRows = function (kind, id) {
     const isSampleList = kind === 'graphics' || kind === 'sites';
     document.getElementById(id).innerHTML = data[kind].map((item, i) => {
@@ -379,12 +400,14 @@
     const caption = document.getElementById('bulkShareCaption');
     if (caption && items.length === 1) {
       caption.value = sampleCaption(items[0].item);
-    } else if (caption && items.length > 1 && !caption.value.trim()) {
+      bulkCaptionEdited = false;
+    } else if (caption && items.length > 1 && !bulkCaptionEdited) {
       caption.value = 'نموونەکانمان، بە وێنە و کورتەی وەسف.';
     }
   });
   document.getElementById('selectAllSamples').addEventListener('click', () => {
     ['graphics', 'sites'].forEach(kind => (data[kind] || []).forEach(item => selectedSamples.add(`${kind}:${ensureSampleShareId(item)}`)));
+    if (!bulkCaptionEdited && selectedSamples.size > 1) document.getElementById('bulkShareCaption').value = 'نموونەکانمان، بە وێنە و کورتەی وەسف.';
     render();
     scheduleBulkPreparation();
   });
@@ -394,10 +417,12 @@
     clearTimeout(bulkPreparationTimer);
     clearPreparedShare();
     document.getElementById('bulkShareCaption').value = '';
+    bulkCaptionEdited = false;
     render();
     scheduleBulkPreparation();
   });
   document.getElementById('bulkShareCaption').addEventListener('input', () => {
+    bulkCaptionEdited = true;
     if (!preparedBulkShare) return;
     const items = updateBulkShareControls().slice(0, 10);
     const link = items.length === 1 ? sampleShareLink(items[0].kind, items[0].item) : collectionShareLink(items);
@@ -413,6 +438,17 @@
     const base = 'https://lovadigital913-del.github.io/lova-digital/';
     const ids = items.map(({ kind, item }) => `${kind}~${ensureSampleShareId(item)}`).join(',');
     return `${base}#collection=${encodeURIComponent(ids)}`;
+  }
+  function bulkShareCaption(items, text, link) {
+    if (items.length === 1) return [text || sampleCaption(items[0].item), link].filter(Boolean).join('\n\n');
+    const details = items.map(({ item }, index) => {
+      const description = sampleCaption(item) || item.desc || '';
+      return `${index + 1}. ${item.title || 'نموونە'}${description ? `\n${description}` : ''}`;
+    });
+    const fullCaption = [text, ...details, link].filter(Boolean).join('\n\n');
+    return fullCaption.length <= 1024
+      ? fullCaption
+      : [text, 'دەقی هەر نموونەیەک لە ژێر وێنەکەی لە بەستەری کۆمەڵەکە ببینە.', link].filter(Boolean).join('\n\n');
   }
   function shareImageUrl(kind, item, index) {
     return item.image || (kind === 'graphics' ? sampleGraphic(index % 6) : finalSitePreview(item));
@@ -434,6 +470,123 @@
     const filename = `${String(item.title || 'sample').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-').slice(0, 70) || 'sample'}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`;
     return new File([blob], filename, { type: blob.type });
   }
+  let viewerShareState = null;
+  let viewerShareVersion = 0;
+  function refreshViewerShareButton() {
+    const actions = document.getElementById('sampleViewerActions');
+    if (!actions) return;
+    let button = actions.querySelector('[data-viewer-share]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn solid';
+      button.dataset.viewerShare = '';
+      button.textContent = 'ئامادەکردنی شیرکردن...';
+      button.addEventListener('click', shareViewerSample);
+      actions.append(button);
+    }
+    button.hidden = !ownerSignedIn;
+    button.disabled = !ownerSignedIn || !viewerShareState?.file;
+    if (ownerSignedIn && viewerShareState && !viewerShareState.file && !viewerShareState.loading) {
+      prepareViewerShare(viewerShareState, viewerShareVersion);
+    }
+  }
+  async function prepareViewerShare(state, version) {
+    state.loading = true;
+    const button = document.querySelector('#sampleViewerActions [data-viewer-share]');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'وێنەکە ئامادە دەکرێت...';
+    }
+    try {
+      if ((state.kind === 'graphics' || state.kind === 'sites') && unsavedSampleShareIds.has(state.item)) {
+        ensureSampleShareId(state.item);
+        await publish();
+      }
+      const file = await createShareFile({ ...state.item, image: state.imageUrl }, state.kind, state.index);
+      if (version !== viewerShareVersion || state !== viewerShareState) return;
+      state.file = file;
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'شیرکردنی ئەم وێنە و دەقە';
+      }
+    } catch (error) {
+      console.error(error);
+      if (version !== viewerShareVersion || state !== viewerShareState) return;
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'ئامادەکردنی وێنە سەرکەوتوو نەبوو';
+        button.title = String(error?.message || 'هەڵەی نەناسراو');
+      }
+    } finally {
+      state.loading = false;
+    }
+  }
+  function setViewerShareSample(item, kind, index, imageUrl) {
+    viewerShareVersion++;
+    viewerShareState = { item, kind, index, imageUrl, caption: sampleCaption(item), file: null, loading: false };
+    const description = document.getElementById('sampleViewerDescription');
+    if (description && viewerShareState.caption) description.textContent = viewerShareState.caption;
+    refreshViewerShareButton();
+  }
+  document.addEventListener('click', event => {
+    const sampleButton = event.target.closest('[data-sample-kind]');
+    if (sampleButton) {
+      const kind = sampleButton.dataset.sampleKind;
+      const index = Number(sampleButton.dataset.sampleIndex);
+      const item = data[kind]?.[index];
+      if (!item) return;
+      const imageUrl = shareImageUrl(kind, item, index);
+      setViewerShareSample(item, kind, index, imageUrl);
+      return;
+    }
+    const customButton = event.target.closest('[data-custom-sample-page]');
+    if (customButton) {
+      const page = data.customPages.find(item => item.id === customButton.dataset.customSamplePage);
+      const index = Number(customButton.dataset.customSampleIndex);
+      const item = page?.samples?.[index];
+      if (item) setViewerShareSample(item, 'custom', index, item.image || page.image || 'logo.png');
+    }
+  });
+  const viewerActions = document.getElementById('sampleViewerActions');
+  if (viewerActions) new MutationObserver(refreshViewerShareButton).observe(viewerActions, { childList: true });
+  async function shareViewerSample() {
+    const share = viewerShareState;
+    if (!ownerSignedIn || !share?.file) return;
+    const link = share.kind === 'graphics' || share.kind === 'sites' ? sampleShareLink(share.kind, share.item) : '';
+    const text = [share.item.title, share.caption, link].filter(Boolean).join('\n');
+    if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [share.file] })) {
+      try {
+        await navigator.share({ files: [share.file], title: share.item.title || 'Lova Digital', text });
+        toast('وێنە و دەقی ئەم نموونەیە هاوبەش کران.');
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error(error);
+          toast(`هاوبەشکردن سەرکەوتوو نەبوو: ${String(error?.message || 'هەڵەی نەناسراو').slice(0, 120)}`);
+        }
+      }
+      return;
+    }
+    const telegramWindow = window.open('about:blank', '_blank');
+    const imageUrl = URL.createObjectURL(share.file);
+    const download = document.createElement('a');
+    download.href = imageUrl;
+    download.download = share.file.name;
+    download.click();
+    setTimeout(() => URL.revokeObjectURL(imageUrl), 60000);
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    } catch (error) {
+      console.warn('Could not copy sample share text.', error);
+    }
+    const destination = new URL('https://t.me/share/url');
+    destination.searchParams.set('url', link || location.href);
+    destination.searchParams.set('text', text);
+    if (telegramWindow) telegramWindow.location.href = destination.href;
+    toast(`وێنەکە دابەزێنرا${copied ? ' و دەقەکە کۆپی کرا' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە.`);
+  }
   async function prepareBulkShare(version) {
     const statusText = document.getElementById('bulkShareStatus');
     const button = document.getElementById('shareBulkSamples');
@@ -442,7 +595,7 @@
     const captionField = document.getElementById('bulkShareCaption');
     const link = selected.length === 1 ? sampleShareLink(selected[0].kind, selected[0].item) : collectionShareLink(selected);
     const text = captionField.value.trim();
-    const caption = [text, link].filter(Boolean).join('\n');
+    const caption = bulkShareCaption(selected, text, link);
     if (caption.length > 1024) {
       statusText.textContent = 'دەقی پۆست لەگەڵ لینک نابێت لە ١٠٢٤ پیت زیاتر بێت.';
       return;
@@ -456,7 +609,7 @@
       const files = await Promise.all(selected.map(({ kind, item }) => createShareFile(item, kind, data[kind].indexOf(item))));
       if (version !== bulkPreparationVersion) return;
       preparedBulkShare = { files, caption, text, keys: selected.map(({ kind, shareId }) => `${kind}:${shareId}`), url: link };
-      button.disabled = false;
+      updateBulkShareControls();
       statusText.textContent = `${files.length} وێنە ئامادەن. دوگمەی شیرکردن دابگرە و Telegram یان پلاتفۆرمێکی تر هەڵبژێرە.`;
     } catch (error) {
       console.error(error);
@@ -470,7 +623,7 @@
     items[0].item.shareText = document.getElementById('bulkShareCaption').value.trim();
     if (await save(items[0].kind)) toast('دەقی نموونە پاشەکەوت کرا.');
   });
-  document.getElementById('shareBulkSamples').addEventListener('click', async event => {
+  async function sharePreparedSamples() {
     if (!ownerSignedIn || !preparedBulkShare) return;
     const share = preparedBulkShare;
     const statusText = document.getElementById('bulkShareStatus');
@@ -495,7 +648,8 @@
       return;
     }
     downloadShareFallback(share, statusText);
-  });
+  }
+  document.getElementById('shareBulkSamples').addEventListener('click', sharePreparedSamples);
   async function downloadShareFallback(share, statusText) {
     const telegramWindow = window.open('about:blank', '_blank');
     share.files.forEach(file => {
@@ -513,7 +667,8 @@
     } catch (error) {
       console.warn('Could not copy Telegram post text.', error);
     }
-    if (telegramWindow) telegramWindow.location.href = `https://t.me/share/url?url=${encodeURIComponent(share.url)}&text=${encodeURIComponent(share.text)}`;
+    const text = share.caption.split(share.url).join('').trim();
+    if (telegramWindow) telegramWindow.location.href = `https://t.me/share/url?url=${encodeURIComponent(share.url)}&text=${encodeURIComponent(text)}`;
     statusText.textContent = `وێنەکان دابەزێنران${copied ? ' و دەقی پۆست کۆپی کرا' : ''}. لە Telegram وێنەکان هاوپێچ بکە و بۆ چەناڵ بنێرە؛ هەڵبژاردنەکە دەمێنێتەوە.`;
   }
   function sampleShareLink(kind, item) {
