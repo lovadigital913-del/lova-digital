@@ -533,30 +533,29 @@
     const link = sampleShareLink(kind, item);
     const text = [caption, link].filter(Boolean).join('\n');
     if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-      let copiedLink = Promise.resolve(false);
+      let copiedText = Promise.resolve(false);
       if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         try {
-          copiedLink = navigator.clipboard.writeText(link).then(() => true).catch(error => {
-            console.warn('Could not copy sample link for sharing.', error);
+          copiedText = navigator.clipboard.writeText(text).then(() => true).catch(error => {
+            console.warn('Could not copy sample caption for sharing.', error);
             return false;
           });
         } catch (error) {
-          console.warn('Could not copy sample link for sharing.', error);
+          console.warn('Could not copy sample caption for sharing.', error);
         }
       }
       try {
         await navigator.share({ files: [file], title: item.title || 'Lova Digital', text });
-        const linkWasCopied = await copiedLink;
-        toast(linkWasCopied
-          ? 'وێنە و دەق هاوبەش کران و لینکی نموونە کۆپی کرا؛ ئەگەر لە کپشنی Telegram نەبوو، لە کپشنەکە دایبنێ.'
-          : 'وێنە و دەق هاوبەش کران؛ لە پێشبینینی Telegram دڵنیابە لینکەکەش لە کپشنەکەدایە.');
+        const textWasCopied = await copiedText;
+        toast(textWasCopied
+          ? 'وێنە هاوبەش کرا و دەق و لینک کۆپی کران؛ ئەگەر لە کپشنی Telegram نەبوون، هەردووکیان لە کپشنەکە دابنێ.'
+          : 'لە پێشبینینی Telegram دڵنیابە وێنە، دەق و لینک هەموویان لە یەک پۆستن.');
         return;
       } catch (error) {
         if (error.name === 'AbortError') return;
         console.error(error);
       }
     }
-    const telegramWindow = window.open('about:blank', '_blank');
     const imageUrl = URL.createObjectURL(file);
     const download = document.createElement('a');
     download.href = imageUrl;
@@ -570,10 +569,8 @@
     } catch (error) {
       console.warn('Could not copy sample share text.', error);
     }
-    const destination = new URL('https://t.me/share/url');
-    destination.searchParams.set('text', text);
-    if (telegramWindow) telegramWindow.location.href = destination.href;
-    toast(`وێنەکە دابەزێنرا${copied ? ' و دەقەکە کۆپی کرا' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە.`);
+    if (!copied) window.prompt('دەقی کپشن و لینکی نموونە کۆپی بکە:', text);
+    toast(`وێنەکە دابەزێنرا${copied ? ' و دەق و لینکەکە کۆپی کران' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە و دەق و لینکەکە لە کپشنی هەمان وێنە دابنێ.`);
   }
   admin.addEventListener('pointerover', event => {
     if (event.relatedTarget instanceof Node && event.target.contains(event.relatedTarget)) return;
@@ -682,9 +679,23 @@
     const link = share.kind === 'graphics' || share.kind === 'sites' ? sampleShareLink(share.kind, share.item) : '';
     const text = [share.item.title, share.caption, link].filter(Boolean).join('\n');
     if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [share.file] })) {
+      let copiedText = Promise.resolve(false);
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try {
+          copiedText = navigator.clipboard.writeText(text).then(() => true).catch(error => {
+            console.warn('Could not copy sample caption for sharing.', error);
+            return false;
+          });
+        } catch (error) {
+          console.warn('Could not copy sample caption for sharing.', error);
+        }
+      }
       try {
         await navigator.share({ files: [share.file], title: share.item.title || 'Lova Digital', text });
-        toast('وێنە و دەقی ئەم نموونەیە هاوبەش کران.');
+        const textWasCopied = await copiedText;
+        toast(textWasCopied
+          ? 'وێنە هاوبەش کرا و دەق و لینک کۆپی کران؛ ئەگەر لە کپشنی Telegram نەبوون، هەردووکیان لە کپشنەکە دابنێ.'
+          : 'لە پێشبینینی Telegram دڵنیابە وێنە، دەق و لینک هەموویان لە یەک پۆستن.');
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error(error);
@@ -693,7 +704,6 @@
       }
       return;
     }
-    const telegramWindow = window.open('about:blank', '_blank');
     const imageUrl = URL.createObjectURL(share.file);
     const download = document.createElement('a');
     download.href = imageUrl;
@@ -707,11 +717,8 @@
     } catch (error) {
       console.warn('Could not copy sample share text.', error);
     }
-    const destination = new URL('https://t.me/share/url');
-    destination.searchParams.set('url', link || location.href);
-    destination.searchParams.set('text', text);
-    if (telegramWindow) telegramWindow.location.href = destination.href;
-    toast(`وێنەکە دابەزێنرا${copied ? ' و دەقەکە کۆپی کرا' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە.`);
+    if (!copied) window.prompt('دەقی کپشن و لینکی نموونە کۆپی بکە:', text);
+    toast(`وێنەکە دابەزێنرا${copied ? ' و دەق و لینکەکە کۆپی کران' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە و دەق و لینکەکە لە کپشنی هەمان وێنە دابنێ.`);
   }
   async function prepareBulkShare(version) {
     const statusText = document.getElementById('bulkShareStatus');
