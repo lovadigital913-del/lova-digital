@@ -313,6 +313,8 @@
     });
   };
   const selectedSamples = new Set();
+  const adminRowShareFiles = new WeakMap();
+  const adminRowSharePending = new WeakMap();
   let preparedBulkShare = null;
   let bulkPreparationTimer = null;
   let bulkPreparationVersion = 0;
@@ -385,7 +387,7 @@
       if (!isSampleList) return `<div class="adminrow"><span>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-inline-end:8px">` : ''}${safe(item.title || item.name)} <span class="hint">${safe(item.category || item.url || '')}</span></span><span><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button> <button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span></div>`;
       const shareId = ensureSampleShareId(item);
       const selected = selectedSamples.has(`${kind}:${shareId}`);
-      return `<div class="adminrow"><span class="adminrow-sample-info"><input class="admin-sample-select" type="checkbox" data-sample-select="${kind}" data-share-id="${safe(shareId)}" aria-label="هەڵبژاردنی ${safe(item.title || 'نموونە')}" ${selected ? 'checked' : ''}>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">` : ''}<span>${safe(item.title || item.name)} <span class="hint">${safe(item.category || '')}</span></span></span><span class="admin-sample-actions"><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button><button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span></div>`;
+      return `<div class="adminrow"><span class="adminrow-sample-info"><input class="admin-sample-select" type="checkbox" data-sample-select="${kind}" data-share-id="${safe(shareId)}" aria-label="هەڵبژاردنی ${safe(item.title || 'نموونە')}" ${selected ? 'checked' : ''}>${item.image ? `<img src="${safe(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">` : ''}<span>${safe(item.title || item.name)} <span class="hint">${safe(item.category || '')}</span></span></span><span class="admin-sample-actions"><button class="btn" type="button" data-row-share="${kind}" data-index="${i}" ${ownerSignedIn ? '' : 'disabled'}>شیرکردن</button><button class="btn" data-edit="${kind}" data-index="${i}">دەستکاری</button><button class="delete" data-remove="${kind}" data-index="${i}">لابردن</button></span></div>`;
     }).join('') || '<span class="hint">هیچ دانەیەک نییە.</span>';
     updateBulkShareControls();
   };
@@ -470,6 +472,105 @@
     const filename = `${String(item.title || 'sample').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-').slice(0, 70) || 'sample'}.${blob.type.split('/')[1].replace('jpeg', 'jpg')}`;
     return new File([blob], filename, { type: blob.type });
   }
+  function adminRowShareButton(kind, index) {
+    return admin.querySelector(`[data-row-share="${kind}"][data-index="${index}"]`);
+  }
+  async function prepareAdminRowShare(item, kind, index, reportError) {
+    const prepared = adminRowShareFiles.get(item);
+    if (prepared) return prepared;
+    const pending = adminRowSharePending.get(item);
+    if (pending) return pending;
+    const button = adminRowShareButton(kind, index);
+    if (button) {
+      button.textContent = 'وێنەکە ئامادە دەکرێت...';
+    }
+    const preparation = createShareFile(item, kind, index).then(file => {
+      adminRowShareFiles.set(item, file);
+      return file;
+    }).catch(error => {
+      console.error(error);
+      const currentButton = adminRowShareButton(kind, index);
+      if (currentButton) {
+        currentButton.disabled = !ownerSignedIn;
+        currentButton.textContent = 'دووبارە هەوڵبدە';
+        currentButton.title = String(error?.message || 'ئامادەکردنی وێنە سەرکەوتوو نەبوو.');
+      }
+      if (reportError) toast(`ئامادەکردنی وێنە سەرکەوتوو نەبوو: ${String(error?.message || 'هەڵەی نەناسراو').slice(0, 120)}`);
+      return null;
+    }).finally(() => adminRowSharePending.delete(item));
+    adminRowSharePending.set(item, preparation);
+    const file = await preparation;
+    const currentButton = adminRowShareButton(kind, index);
+    if (file && currentButton) {
+      currentButton.disabled = !ownerSignedIn;
+      currentButton.textContent = 'شیرکردن';
+      currentButton.title = '';
+    }
+    return file;
+  }
+  async function shareAdminRowSample(button) {
+    const kind = button.dataset.rowShare;
+    const index = Number(button.dataset.index);
+    const item = data[kind]?.[index];
+    if (!item || !ownerSignedIn) return;
+    let file = adminRowShareFiles.get(item);
+    if (!file) {
+      file = await prepareAdminRowShare(item, kind, index, true);
+      if (file) toast('وێنەکە ئامادەیە؛ دووبارە دوگمەی شیرکردن دابگرە بۆ ناردن.');
+      return;
+    }
+    const text = [item.title, sampleCaption(item)].filter(Boolean).join('\n');
+    if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: item.title || 'Lova Digital', text });
+        toast('وێنە و دەقی نموونەکە هاوبەش کران.');
+        return;
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error(error);
+      }
+    }
+    const telegramWindow = window.open('about:blank', '_blank');
+    const imageUrl = URL.createObjectURL(file);
+    const download = document.createElement('a');
+    download.href = imageUrl;
+    download.download = file.name;
+    download.click();
+    setTimeout(() => URL.revokeObjectURL(imageUrl), 60000);
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+    } catch (error) {
+      console.warn('Could not copy sample share text.', error);
+    }
+    const destination = new URL('https://t.me/share/url');
+    destination.searchParams.set('url', 'https://lovadigital913-del.github.io/lova-digital/');
+    destination.searchParams.set('text', text);
+    if (telegramWindow) telegramWindow.location.href = destination.href;
+    toast(`وێنەکە دابەزێنرا${copied ? ' و دەقەکە کۆپی کرا' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە.`);
+  }
+  admin.addEventListener('pointerover', event => {
+    if (event.relatedTarget instanceof Node && event.target.contains(event.relatedTarget)) return;
+    const button = event.target.closest('[data-row-share]');
+    if (!button || !ownerSignedIn) return;
+    const kind = button.dataset.rowShare;
+    const index = Number(button.dataset.index);
+    const item = data[kind]?.[index];
+    if (item && !adminRowShareFiles.has(item)) prepareAdminRowShare(item, kind, index, false);
+  });
+  admin.addEventListener('focusin', event => {
+    const button = event.target.closest('[data-row-share]');
+    if (!button || !ownerSignedIn) return;
+    const kind = button.dataset.rowShare;
+    const index = Number(button.dataset.index);
+    const item = data[kind]?.[index];
+    if (item && !adminRowShareFiles.has(item)) prepareAdminRowShare(item, kind, index, false);
+  });
+  admin.addEventListener('click', event => {
+    const button = event.target.closest('[data-row-share]');
+    if (button) shareAdminRowSample(button);
+  });
   let viewerShareState = null;
   let viewerShareVersion = 0;
   function refreshViewerShareButton() {
