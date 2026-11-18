@@ -545,7 +545,7 @@
         }
       }
       try {
-        await navigator.share({ files: [file], title: item.title || 'Lova Digital', text: caption, url: link });
+        await navigator.share({ files: [file], title: item.title || 'Lova Digital', text });
         const linkWasCopied = await copiedLink;
         toast(linkWasCopied
           ? 'وێنە و دەق هاوبەش کران و لینکی نموونە کۆپی کرا؛ ئەگەر لە کپشنی Telegram نەبوو، لە کپشنەکە دایبنێ.'
@@ -571,8 +571,7 @@
       console.warn('Could not copy sample share text.', error);
     }
     const destination = new URL('https://t.me/share/url');
-    destination.searchParams.set('url', link);
-    destination.searchParams.set('text', caption);
+    destination.searchParams.set('text', text);
     if (telegramWindow) telegramWindow.location.href = destination.href;
     toast(`وێنەکە دابەزێنرا${copied ? ' و دەقەکە کۆپی کرا' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە.`);
   }
