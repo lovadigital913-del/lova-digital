@@ -514,12 +514,24 @@
     const item = data[kind]?.[index];
     if (!item || !ownerSignedIn) return;
     let file = adminRowShareFiles.get(item);
+    const wasPrepared = Boolean(file);
     if (!file) {
       file = await prepareAdminRowShare(item, kind, index, true);
-      if (file) toast('وێنەکە ئامادەیە؛ دووبارە دوگمەی شیرکردن دابگرە بۆ ناردن.');
+      if (!file) return;
+    }
+    ensureSampleShareId(item);
+    if (unsavedSampleShareIds.has(item)) {
+      if (!(await save(kind))) return;
+      toast('بەستەری نموونەکە پاشەکەوت کرا؛ دووبارە دوگمەی شیرکردن دابگرە بۆ ناردن.');
       return;
     }
-    const text = [item.title, sampleCaption(item)].filter(Boolean).join('\n');
+    if (!wasPrepared) {
+      toast('وێنەکە ئامادەیە؛ دووبارە دوگمەی شیرکردن دابگرە بۆ ناردن.');
+      return;
+    }
+    const caption = [item.title, sampleCaption(item)].filter(Boolean).join('\n');
+    const link = sampleShareLink(kind, item);
+    const text = [caption, link].filter(Boolean).join('\n');
     if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: item.title || 'Lova Digital', text });
@@ -545,8 +557,8 @@
       console.warn('Could not copy sample share text.', error);
     }
     const destination = new URL('https://t.me/share/url');
-    destination.searchParams.set('url', 'https://lovadigital913-del.github.io/lova-digital/');
-    destination.searchParams.set('text', text);
+    destination.searchParams.set('url', link);
+    destination.searchParams.set('text', caption);
     if (telegramWindow) telegramWindow.location.href = destination.href;
     toast(`وێنەکە دابەزێنرا${copied ? ' و دەقەکە کۆپی کرا' : ''}؛ لە Telegram وێنەکە هاوپێچ بکە.`);
   }
